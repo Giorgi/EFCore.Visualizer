@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- The VisualStudio.Extensibility preview packages are available from the azure-public/vside/msft_consumption feed -->
+    <RestoreAdditionalProjectSources>https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/nuget/v3/index.json;$(RestoreAdditionalProjectSources)</RestoreAdditionalProjectSources>
+
+    <VssdkCompatibleExtension>true</VssdkCompatibleExtension>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="QueryPlanUserControl.xaml" />
+    <None Remove="Resources\Postgres\template.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\IQueryableObjectSource\QueryInfo.cs" Link="QueryInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\IQueryableObjectSource\bin\$(Configuration)\net6\IQueryableObjectSource.dll" Link="netcoreapp\IQueryableObjectSource.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.DebuggerVisualizers" Version="17.6.1032901" />
+    <PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.9.52-preview-1" />
+    <PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.9.52-preview-1" />
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.6.36389" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2210.55" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="QueryPlanUserControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System.Xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\Postgres\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Resources\SqlServer\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+  </ItemGroup>
+</Project>

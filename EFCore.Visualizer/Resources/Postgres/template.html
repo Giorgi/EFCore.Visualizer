@@ -1,0 +1,27 @@
+<script src="vue.global.prod.js"></script>
+<script src="pev2.umd.js"></script>
+<link href="bootstrap.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<meta charset="utf-8">
+
+<div id="app" style="height:100%">
+  <pev2 :plan-source="plan" :plan-query="query" />
+</div>
+
+<script>
+  const { createApp } = Vue
+
+  const plan = "{plan}"
+  const query = "{query}"
+
+  const app = createApp({
+    data() {
+      return {
+        plan: plan,
+        query: query,
+      }
+    },
+  })
+  app.component("pev2", pev2.Plan)
+  app.mount("#app")
+</script>
