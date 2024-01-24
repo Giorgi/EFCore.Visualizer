@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.DebuggerVisualizers;
 using System.Data.Common;
 using System.IO;
@@ -19,27 +20,34 @@ namespace IQueryableObjectSource
                 return;
             }
 
-            using var command = queryable.CreateDbCommand();
-            var provider = GetDatabaseProvider(command);
-
-            if (provider == null)
+            try
             {
-                SerializeAsJson(outgoingData, null!);
-                return;
+                using var command = queryable.CreateDbCommand();
+                var provider = GetDatabaseProvider(command);
+
+                if (provider == null)
+                {
+                    SerializeAsJson(outgoingData, null!);
+                    return;
+                }
+
+                var query = queryable.ToQueryString();
+                var rawPlan = provider.ExtractPlan();
+
+                var planFile = Path.Combine(provider.GetPlanDirectory(ResourcesLocation), Path.ChangeExtension(Path.GetRandomFileName(), "html"));
+
+                var planPageHtml = File.ReadAllText(Path.Combine(provider.GetPlanDirectory(ResourcesLocation), "template.html"))
+                    .Replace("{plan}", JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(rawPlan).Replace("'", "\\'"))
+                    .Replace("{query}", JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(query).Replace("'", "\\'"));
+
+                File.WriteAllText(planFile, planPageHtml);
+
+                SerializeAsJson(outgoingData, new QueryInfo { PlanLocation = planFile });
             }
-
-            var query = queryable.ToQueryString();
-            var rawPlan = provider.ExtractPlan();
-
-            var planFile = Path.Combine(provider.GetPlanDirectory(ResourcesLocation), Path.ChangeExtension(Path.GetRandomFileName(), "html"));
-
-            var planPageHtml = File.ReadAllText(Path.Combine(provider.GetPlanDirectory(ResourcesLocation), "template.html"))
-                .Replace("{plan}", JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(rawPlan).Replace("'", "\\'"))
-                .Replace("{query}", JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(query).Replace("'", "\\'"));
-
-            File.WriteAllText(planFile, planPageHtml);
-
-            SerializeAsJson(outgoingData, new QueryInfo { PlanHtml = planFile });
+            catch (Exception ex)
+            {
+                SerializeAsJson(outgoingData, new QueryInfo { ErrorMessage = ex.Message});
+            }
         }
 
         private static DatabaseProvider GetDatabaseProvider(DbCommand command)

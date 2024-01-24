@@ -2,5 +2,6 @@
 
 public class QueryInfo
 {
-    public string PlanHtml { get; set; }
+    public string PlanLocation { get; set; }
+    public string ErrorMessage { get; set; }
 }

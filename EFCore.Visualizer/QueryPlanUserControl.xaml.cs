@@ -41,11 +41,19 @@ namespace EFCore.Visualizer
             await webView.EnsureCoreWebView2Async(environment);
 
             var queryInfo = await visualizerTarget.ObjectSource.RequestDataAsync<QueryInfo>(jsonSerializer: null, CancellationToken.None);
-            planFilePath = queryInfo.PlanHtml;
-
-            if (!string.IsNullOrEmpty(planFilePath))
+            
+            if (string.IsNullOrEmpty(queryInfo.ErrorMessage))
             {
-                webView.CoreWebView2.Navigate(planFilePath);
+                planFilePath = queryInfo.PlanLocation;
+
+                if (!string.IsNullOrEmpty(planFilePath))
+                {
+                    webView.CoreWebView2.Navigate(planFilePath);
+                }
+            }
+            else
+            {
+                MessageBox.Show(queryInfo.ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
