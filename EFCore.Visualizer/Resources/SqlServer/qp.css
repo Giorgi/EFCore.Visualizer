@@ -20,15 +20,12 @@ div.qp-tt {
 
 .qp-statement-header-row {
     width: 100%;
-    height: 15.6px;
 }
 
 .qp-statement-header-row > div {
     width: 100%;
-    position: absolute;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .missing-index {
