@@ -18,6 +18,12 @@ div.qp-tt {
     padding: 0.3em;
 }
 
+@media (prefers-color-scheme: dark) {
+    .qp-statement-header {
+        color: white;
+    }
+}
+
 .qp-statement-header-row {
     width: 100%;
 }
