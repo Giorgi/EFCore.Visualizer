@@ -1,5 +1,4 @@
-﻿using DemoExtension;
-using Microsoft.VisualStudio.Extensibility.DebuggerVisualizers;
+﻿using Microsoft.VisualStudio.Extensibility.DebuggerVisualizers;
 using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.RpcContracts.RemoteUI;
 using Microsoft.VisualStudio.Extensibility.VSSdkCompatibility;
@@ -13,6 +12,10 @@ namespace EFCore.Visualizer
     [VisualStudioContribution]
     internal class EFCoreQueryableDebuggerVisualizerProvider : DebuggerVisualizerProvider
     {
+        private const string EntityQueryable = "Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryable`1, Microsoft.EntityFrameworkCore, Version=0.0.0.0, Culture=neutral";
+        private const string IncludableQueryable = "Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions+IncludableQueryable`2, Microsoft.EntityFrameworkCore, Version=0.0.0.0, Culture=neutral";
+        private const string DisplayName = "Query Plan Visualizer";
+
         /// <summary>
         /// Initializes a new instance of the <see cref="EFCoreQueryableDebuggerVisualizerProvider"/> class.
         /// </summary>
@@ -24,8 +27,9 @@ namespace EFCore.Visualizer
         }
 
         /// <inheritdoc/>
-        public override DebuggerVisualizerProviderConfiguration DebuggerVisualizerProviderConfiguration => new("Query Plan Visualizer",
-            "Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryable`1, Microsoft.EntityFrameworkCore, Version=0.0.0.0, Culture=neutral")
+        public override DebuggerVisualizerProviderConfiguration DebuggerVisualizerProviderConfiguration => new(
+                        new VisualizerTargetType(DisplayName, EntityQueryable),
+                        new VisualizerTargetType(DisplayName, IncludableQueryable))
         {
             VisualizerObjectSourceType = new("IQueryableObjectSource.EFCoreQueryableObjectSource, IQueryableObjectSource"),
         };
