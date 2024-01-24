@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="DemoExtension.a059bff0-3edd-4b37-921b-f93d93161013" Version="1.0" Language="en-US" Publisher="Publisher name" />
-    <DisplayName>DemoExtension</DisplayName>
-    <Description>VisualStudio.Extensibility Extension with VSSDK Compatibility.</Description>
+    <Identity Id="EFCore.Visualizer.a059bff0-3edd-4b37-921b-f93d93161013" Version="1.0" Language="en-US" Publisher="Giorgi Dalakishvili" />
+    <DisplayName>EFCore.Visualizer</DisplayName>
+    <Description>View Entity Framework Core query plan directly inside Visual Studio</Description>
+    <Icon>Icon.png</Icon>
+    <Tags>EFCore, SQL Server, PostgreSQL, Visualizer, Query Plan</Tags>
   </Metadata>
   <Installation ExtensionType="VSSDK+VisualStudio.Extensibility">
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.9, 18.0)">
