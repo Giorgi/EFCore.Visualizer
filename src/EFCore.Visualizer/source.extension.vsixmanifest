@@ -6,7 +6,7 @@
     <Description xml:space="preserve">View Entity Framework Core query plan directly inside Visual Studio</Description>
     <Preview>true</Preview>
     <MoreInfo>https://github.com/Giorgi/EFCore.Visualizer</MoreInfo>
-    <Icon>Icon.png</Icon>
+    <Icon>Images\IconSmall.png</Icon>
     <Tags>EFCore, SQL Server, PostgreSQL, Visualizer, Query Plan</Tags>
   </Metadata>
   <Installation ExtensionType="VSSDK+VisualStudio.Extensibility">
