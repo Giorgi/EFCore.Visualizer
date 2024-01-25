@@ -50,6 +50,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="ThirdPartyLicenses\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="Resources\Postgres\*.*">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
