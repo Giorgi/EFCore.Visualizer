@@ -15,13 +15,20 @@ The visualizer requires **Visual Studio Version 17.9.0 or newer**.
 After installing the extension from marketplace, a new debugger visualizer will be added to Visual Studio. When debugging, hover over your queries and there will be an option to view query plan:
 ![VariableVisualizer](doc/VariableVisualizer.png)
 
-Click on 'Query Plan Visualizer' and query plan will be displayed for your query:
+Click on 'Query Plan Visualizer' and query plan will be displayed for your query.
+
+Sql Server:
 
 ![Sql Server Plan](doc/SqlPlan1.png)
 
-
 ![Sql Server Plan](doc/SqlPlan2.png)
+
+PostgreSQL:
 
 ![PostgreSQL Plan](doc/PostgreSQLPlan2.png)
 
 ![PostgreSQL Plan](doc/PostgreSQLPlan1.png)
+
+## Credits
+
+This extension uses [pev2](https://github.com/dalibo/pev2/) and [html-query-plan](https://github.com/JustinPealing/html-query-plan) to display query plans.
