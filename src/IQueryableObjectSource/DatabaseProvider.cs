@@ -50,18 +50,26 @@ class SqlServerDatabaseProvider : DatabaseProvider
 
     protected override string ExtractPlanInternal(DbCommand command)
     {
-        using var setStatisticsCommand = command.Connection.CreateCommand();
-        setStatisticsCommand.CommandText = "SET STATISTICS XML ON";
-        setStatisticsCommand.ExecuteNonQuery();
-
-        using var reader = command.ExecuteReader();
-        while (reader.NextResult())
+        using var statisticsCommand = command.Connection.CreateCommand();
+        try
         {
-            if (reader.GetName(0) == "Microsoft SQL Server 2005 XML Showplan")
+            statisticsCommand.CommandText = "SET STATISTICS XML ON";
+            statisticsCommand.ExecuteNonQuery();
+
+            using var reader = command.ExecuteReader();
+            while (reader.NextResult())
             {
-                reader.Read();
-                return reader.GetString(0);
+                if (reader.GetName(0) == "Microsoft SQL Server 2005 XML Showplan")
+                {
+                    reader.Read();
+                    return reader.GetString(0);
+                }
             }
+        }
+        finally
+        {
+            statisticsCommand.CommandText = "SET STATISTICS XML OFF";
+            statisticsCommand.ExecuteNonQuery();
         }
 
         return null;
