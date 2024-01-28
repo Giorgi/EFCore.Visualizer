@@ -2,7 +2,10 @@
 
 # Entity Framework Core Query Plan Visualizer
 
-View Entity Framework Core query plan directly inside Visual Studio
+View Entity Framework Core query plan directly inside Visual Studio.
+
+[![Download Now](https://img.shields.io/badge/Download%20Now-8A2BE2?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
+
 
 ## Introduction
 
@@ -13,17 +16,18 @@ The visualizer requires **Visual Studio Version 17.9.0 (Currently in Preview) or
 ## Usage
 
 After installing the [extension from the marketplace](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer), a new debugger visualizer will be added to Visual Studio. When debugging, hover over your queries and there will be an option to view the query plan:
+
 ![VariableVisualizer](doc/VariableVisualizer.png)
 
 Click on 'Query Plan Visualizer' and the query plan will be displayed for your query.
 
-SQL Server:
+### SQL Server:
 
 ![Sql Server Plan](doc/SqlPlan1.png)
 
 ![Sql Server Plan](doc/SqlPlan2.png)
 
-PostgreSQL:
+### PostgreSQL:
 
 ![PostgreSQL Plan](doc/PostgreSQLPlan2.png)
 
