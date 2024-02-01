@@ -3,7 +3,45 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
-    <wv2:WebView2 Name="webView">
-    </wv2:WebView2>
-
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <FontFamily x:Key="FontAwesomeBrands">pack://application:,,,/EFCore.Visualizer;component/Fonts/#Font Awesome 6 Brands Regular</FontFamily>
+            <FontFamily x:Key="FontAwesome">pack://application:,,,/EFCore.Visualizer;component/Fonts/#Font Awesome 6 Free Solid</FontFamily>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Bottom">
+            <Button x:Name="ButtonReview" Padding="5" DockPanel.Dock="Right" HorizontalAlignment="Right" Click="ButtonReviewClick">
+                <TextBlock>
+                    <Run FontFamily="{StaticResource FontAwesome}">&#xf005;</Run>
+                    <Run>Write a review</Run>
+                </TextBlock>
+            </Button>
+            <Separator Width="10" Background="Transparent" DockPanel.Dock="Right"/>
+            <Button x:Name="ButtonCoffee" Padding="5" 
+                    DockPanel.Dock="Right" HorizontalAlignment="Right" Click="ButtonCoffeeClick">
+                <TextBlock>
+                    <Run FontFamily="{StaticResource FontAwesome}">&#xf7b6;</Run>
+                    <Run>Buy me a Coffee</Run>
+                </TextBlock>
+            </Button>
+            <Separator Width="10" Background="Transparent" DockPanel.Dock="Right"/>
+            <Button x:Name="ButtonSponsor" Padding="5" 
+                    DockPanel.Dock="Right" HorizontalAlignment="Right" Click="ButtonSponsorClick">
+                <TextBlock>
+                    <Run FontFamily="{StaticResource FontAwesomeBrands}">&#xf09b;</Run>
+                    <Run>Sponsor on GitHub</Run>
+                </TextBlock>
+            </Button>
+            <Separator Width="10" Background="Transparent" DockPanel.Dock="Right"/>
+            <Button x:Name="ButtonStar" Padding="5" DockPanel.Dock="Right" HorizontalAlignment="Right" Click="ButtonGitHubClick">
+                <TextBlock>
+                    <Run FontFamily="{StaticResource FontAwesomeBrands}">&#xf09b;</Run>
+                    <Run>View on GitHub</Run>
+                </TextBlock>
+            </Button>
+        </DockPanel>
+        <wv2:WebView2 Name="webView">
+        </wv2:WebView2>
+    </DockPanel>
 </UserControl>

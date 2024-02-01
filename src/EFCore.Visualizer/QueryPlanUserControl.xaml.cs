@@ -1,8 +1,9 @@
-﻿using System.Windows;
-using System.Windows.Controls;
-using IQueryableObjectSource;
+﻿using IQueryableObjectSource;
 using Microsoft.VisualStudio.Extensibility.DebuggerVisualizers;
 using Microsoft.Web.WebView2.Core;
+using System.Diagnostics;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace EFCore.Visualizer
 {
@@ -41,7 +42,7 @@ namespace EFCore.Visualizer
             await webView.EnsureCoreWebView2Async(environment);
 
             var queryInfo = await visualizerTarget.ObjectSource.RequestDataAsync<QueryInfo>(jsonSerializer: null, CancellationToken.None);
-            
+
             if (string.IsNullOrEmpty(queryInfo.ErrorMessage))
             {
                 planFilePath = queryInfo.PlanLocation;
@@ -54,6 +55,38 @@ namespace EFCore.Visualizer
             else
             {
                 MessageBox.Show(queryInfo.ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ButtonReviewClick(object sender, RoutedEventArgs e)
+        {
+            StartProcess("https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer&ssr=false#review-details");
+        }
+
+        private void ButtonSponsorClick(object sender, RoutedEventArgs e)
+        {
+            StartProcess("https://github.com/sponsors/Giorgi/");
+        }
+
+        private void ButtonGitHubClick(object sender, RoutedEventArgs e)
+        {
+            StartProcess("https://github.com/Giorgi/EFCore.Visualizer");
+        }
+
+        private void ButtonCoffeeClick(object sender, RoutedEventArgs e)
+        {
+            StartProcess("https://ko-fi.com/giorgi");
+        }
+
+        private static void StartProcess(string url)
+        {
+            try
+            {
+                Process.Start(url);
+            }
+            catch (Exception exception)
+            {
+
             }
         }
     }

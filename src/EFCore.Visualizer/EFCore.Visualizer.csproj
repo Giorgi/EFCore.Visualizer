@@ -11,6 +11,8 @@
     <VssdkCompatibleExtension>true</VssdkCompatibleExtension>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Fonts\fa-brands-400.ttf" />
+    <None Remove="Fonts\fa-solid-900.ttf" />
     <None Remove="QueryPlanUserControl.xaml" />
     <None Remove="Resources\Postgres\template.html" />
   </ItemGroup>
@@ -59,5 +61,10 @@
     <Content Include="Resources\SqlServer\*.*">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Fonts\fa-brands-400.ttf" />
+    <Resource Include="Fonts\fa-solid-900.ttf" />
   </ItemGroup>
 </Project>
