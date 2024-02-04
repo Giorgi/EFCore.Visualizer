@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="EFCore.Visualizer.a059bff0-3edd-4b37-921b-f93d93161013" Version="1.0.1" Language="en-US" Publisher="Giorgi Dalakishvili" />
+    <Identity Id="EFCore.Visualizer.a059bff0-3edd-4b37-921b-f93d93161013" Version="1.0.2" Language="en-US" Publisher="Giorgi Dalakishvili" />
     <DisplayName>EFCore.Visualizer</DisplayName>
-    <Description xml:space="preserve">View Entity Framework Core query plan directly inside Visual Studio</Description>
+    <Description xml:space="preserve">View Entity Framework Core query plan directly inside Visual Studio.</Description>
     <Preview>true</Preview>
     <MoreInfo>https://github.com/Giorgi/EFCore.Visualizer</MoreInfo>
     <GettingStartedGuide>https://github.com/Giorgi/EFCore.Visualizer/blob/main/README.md#usage</GettingStartedGuide>
@@ -11,10 +11,22 @@
     <Tags>EFCore, SQL Server, PostgreSQL, Visualizer, Query Plan</Tags>
   </Metadata>
   <Installation ExtensionType="VSSDK+VisualStudio.Extensibility">
-    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.9, 18.0)">
+    <InstallationTarget Version="[17.9, 18.0)" Id="Microsoft.VisualStudio.Community">
       <ProductArchitecture>amd64</ProductArchitecture>
     </InstallationTarget>
-    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.9, 18.0)">
+    <InstallationTarget Version="[17.9, 18.0)" Id="Microsoft.VisualStudio.Community">
+      <ProductArchitecture>arm64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Version="[17.9,18.0)" Id="Microsoft.VisualStudio.Pro">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Version="[17.9,18.0)" Id="Microsoft.VisualStudio.Pro">
+      <ProductArchitecture>arm64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Version="[17.9,18.0)" Id="Microsoft.VisualStudio.Enterprise">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Version="[17.9,18.0)" Id="Microsoft.VisualStudio.Enterprise">
       <ProductArchitecture>arm64</ProductArchitecture>
     </InstallationTarget>
   </Installation>
