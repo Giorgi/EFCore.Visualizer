@@ -27,34 +27,44 @@ namespace EFCore.Visualizer
             {
                 File.Delete(planFilePath);
             }
-            catch (Exception exception)
+            catch
             {
+                // Ignore
             }
 
             Unloaded -= QueryPlanUserControlUnloaded;
         }
 
+#pragma warning disable VSTHRD100 // Avoid async void methods
         protected override async void OnInitialized(EventArgs e)
+#pragma warning restore VSTHRD100 // Avoid async void methods
         {
-            base.OnInitialized(e);
-
-            var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(AssemblyLocation, "WVData"));
-            await webView.EnsureCoreWebView2Async(environment);
-
-            var queryInfo = await visualizerTarget.ObjectSource.RequestDataAsync<QueryInfo>(jsonSerializer: null, CancellationToken.None);
-
-            if (string.IsNullOrEmpty(queryInfo.ErrorMessage))
+            try
             {
-                planFilePath = queryInfo.PlanLocation;
+                base.OnInitialized(e);
 
-                if (!string.IsNullOrEmpty(planFilePath))
+                var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(AssemblyLocation, "WVData"));
+                await webView.EnsureCoreWebView2Async(environment);
+
+                var queryInfo = await visualizerTarget.ObjectSource.RequestDataAsync<QueryInfo>(jsonSerializer: null, CancellationToken.None);
+
+                if (string.IsNullOrEmpty(queryInfo.ErrorMessage))
                 {
-                    webView.CoreWebView2.Navigate(planFilePath);
+                    planFilePath = queryInfo.PlanLocation;
+
+                    if (!string.IsNullOrEmpty(planFilePath))
+                    {
+                        webView.CoreWebView2.Navigate(planFilePath);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show(queryInfo.ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show(queryInfo.ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -84,9 +94,9 @@ namespace EFCore.Visualizer
             {
                 Process.Start(url);
             }
-            catch (Exception exception)
+            catch
             {
-
+                // Ignore
             }
         }
     }

@@ -14,7 +14,7 @@ namespace EFCore.Visualizer
     {
         private const string EntityQueryable = "Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryable`1, Microsoft.EntityFrameworkCore, Version=0.0.0.0, Culture=neutral";
         private const string IncludableQueryable = "Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions+IncludableQueryable`2, Microsoft.EntityFrameworkCore, Version=0.0.0.0, Culture=neutral";
-        private const string DisplayName = "Query Plan Visualizer";
+        private const string DisplayName = "EFCore.Visualizer.DisplayName";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EFCoreQueryableDebuggerVisualizerProvider"/> class.
@@ -28,8 +28,8 @@ namespace EFCore.Visualizer
 
         /// <inheritdoc/>
         public override DebuggerVisualizerProviderConfiguration DebuggerVisualizerProviderConfiguration => new(
-                        new VisualizerTargetType(DisplayName, EntityQueryable),
-                        new VisualizerTargetType(DisplayName, IncludableQueryable))
+                        new VisualizerTargetType($"%{DisplayName}%", EntityQueryable),
+                        new VisualizerTargetType($"%{DisplayName}%", IncludableQueryable))
         {
             VisualizerObjectSourceType = new("IQueryableObjectSource.EFCoreQueryableObjectSource, IQueryableObjectSource"),
         };
