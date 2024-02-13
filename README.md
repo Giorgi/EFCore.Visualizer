@@ -12,7 +12,7 @@ View Entity Framework Core query plan directly inside Visual Studio.
 With Entity Framework Core query plan debugger visualizer, you can view the query plan of your queries directly inside Visual Studio. Currently, the visualizer supports SQL Server and PostgreSQL.
 
 > [!IMPORTANT] 
-> The visualizer requires **Visual Studio Version 17.9.0 (Currently in Preview) or newer** and supports **EF Core 7 or newer**.
+> The visualizer requires **Visual Studio Version 17.9.0 ([Released on February 13th](https://devblogs.microsoft.com/visualstudio/visual-studio-2022-17-9-now-available/)) or newer** and supports **EF Core 7 or newer**.
 
 ## Usage
 
