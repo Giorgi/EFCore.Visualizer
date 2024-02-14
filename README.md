@@ -6,6 +6,8 @@ View Entity Framework Core query plan directly inside Visual Studio.
 
 [![Download Now](https://img.shields.io/badge/Download%20Now-8A2BE2?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
 [![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/GiorgiDalakishvili.EFCoreVisualizer?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
+[![Visual Studio Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/GiorgiDalakishvili.EFCoreVisualizer?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer&ssr=false#review-details)
+
 
 ## Introduction
 
