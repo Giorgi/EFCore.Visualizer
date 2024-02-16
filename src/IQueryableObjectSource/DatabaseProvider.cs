@@ -44,6 +44,7 @@ class SqlServerDatabaseProvider(DbCommand command) : DatabaseProvider(command)
         using var statisticsCommand = command.Connection.CreateCommand();
         try
         {
+            statisticsCommand.Transaction = command.Transaction;
             statisticsCommand.CommandText = "SET STATISTICS XML ON";
             statisticsCommand.ExecuteNonQuery();
 
