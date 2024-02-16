@@ -6,14 +6,9 @@ using System.Linq;
 
 namespace IQueryableObjectSource;
 
-abstract class DatabaseProvider
+abstract class DatabaseProvider(DbCommand command)
 {
-    protected DatabaseProvider(DbCommand command)
-    {
-        Command = command;
-    }
-
-    protected DbCommand Command { get; }
+    protected DbCommand Command { get; } = command;
 
     public string ExtractPlan()
     {
@@ -42,12 +37,8 @@ abstract class DatabaseProvider
     internal abstract string GetPlanDirectory(string baseDirectory);
 }
 
-class SqlServerDatabaseProvider : DatabaseProvider
+class SqlServerDatabaseProvider(DbCommand command) : DatabaseProvider(command)
 {
-    public SqlServerDatabaseProvider(DbCommand command) : base(command)
-    {
-    }
-
     protected override string ExtractPlanInternal(DbCommand command)
     {
         using var statisticsCommand = command.Connection.CreateCommand();
@@ -78,12 +69,8 @@ class SqlServerDatabaseProvider : DatabaseProvider
     internal override string GetPlanDirectory(string baseDirectory) => Path.Combine(baseDirectory, "SqlServer");
 }
 
-class PostgresDatabaseProvider : DatabaseProvider
+class PostgresDatabaseProvider(DbCommand command) : DatabaseProvider(command)
 {
-    public PostgresDatabaseProvider(DbCommand command) : base(command)
-    {
-    }
-
     protected override string ExtractPlanInternal(DbCommand command)
     {
         command.CommandText = "EXPLAIN (ANALYZE, COSTS, VERBOSE, BUFFERS) " + command.CommandText;
