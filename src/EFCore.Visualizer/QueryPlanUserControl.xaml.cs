@@ -1,7 +1,10 @@
-﻿using IQueryableObjectSource;
-using Microsoft.VisualStudio.Extensibility.DebuggerVisualizers;
+﻿using Microsoft.VisualStudio.Extensibility.DebuggerVisualizers;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.Web.WebView2.Core;
+using Nerdbank.Streams;
+using System.Buffers;
 using System.Diagnostics;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -43,23 +46,37 @@ namespace EFCore.Visualizer
             {
                 base.OnInitialized(e);
 
+                //var shellSettingsManager = new ShellSettingsManager(ServiceProvider.GlobalProvider);
+                //var store = shellSettingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+                //var theme = store.GetString("General", "CurrentTheme", string.Empty);
+
                 var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(AssemblyLocation, "WVData"));
                 await webView.EnsureCoreWebView2Async(environment);
 
-                var queryInfo = await visualizerTarget.ObjectSource.RequestDataAsync<QueryInfo>(jsonSerializer: null, CancellationToken.None);
+                var response = await visualizerTarget.ObjectSource.RequestDataAsync(new ReadOnlySequence<byte>(), CancellationToken.None);
 
-                if (string.IsNullOrEmpty(queryInfo.ErrorMessage))
+                if (!response.HasValue)
                 {
-                    planFilePath = queryInfo.PlanLocation;
+                    return;
+                }
+
+                using var stream = response.Value.AsStream();
+                using var binaryReader = new BinaryReader(stream, Encoding.Default);
+
+                var isError = binaryReader.ReadBoolean();
+
+                if (isError)
+                {
+                    MessageBox.Show(binaryReader.ReadString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else
+                {
+                    planFilePath = binaryReader.ReadString();
 
                     if (!string.IsNullOrEmpty(planFilePath))
                     {
                         webView.CoreWebView2.Navigate(planFilePath);
                     }
-                }
-                else
-                {
-                    MessageBox.Show(queryInfo.ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)

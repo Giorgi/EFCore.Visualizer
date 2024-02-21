@@ -12,9 +12,6 @@
     <None Remove="QueryPlanUserControl.xaml" />
     <None Remove="Resources\Postgres\template.html" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\IQueryableObjectSource\QueryInfo.cs" Link="QueryInfo.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <Content Include="..\IQueryableObjectSource\bin\$(Configuration)\net6\IQueryableObjectSource.dll" Link="netcoreapp\IQueryableObjectSource.dll" />

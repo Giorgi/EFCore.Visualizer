@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.DebuggerVisualizers;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Encodings.Web;
 
 namespace IQueryableObjectSource
@@ -11,12 +12,11 @@ namespace IQueryableObjectSource
     public class EFCoreQueryableObjectSource : VisualizerObjectSource
     {
         private static readonly string ResourcesLocation = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(typeof(EFCoreQueryableObjectSource).Assembly.Location)), "Resources");
-        
-        public override void GetData(object target, Stream outgoingData)
+
+        public override void TransferData(object target, Stream incomingData, Stream outgoingData)
         {
             if (target is not IQueryable queryable)
             {
-                SerializeAsJson(outgoingData, null!);
                 return;
             }
 
@@ -27,7 +27,6 @@ namespace IQueryableObjectSource
 
                 if (provider == null)
                 {
-                    SerializeAsJson(outgoingData, null!);
                     return;
                 }
 
@@ -42,11 +41,15 @@ namespace IQueryableObjectSource
 
                 File.WriteAllText(planFile, planPageHtml);
 
-                SerializeAsJson(outgoingData, new QueryInfo { PlanLocation = planFile });
+                using var writer = new BinaryWriter(outgoingData, Encoding.Default, true);
+                writer.Write(false);
+                writer.Write(planFile);
             }
             catch (Exception ex)
             {
-                SerializeAsJson(outgoingData, new QueryInfo { ErrorMessage = ex.Message});
+                using var writer = new BinaryWriter(outgoingData, Encoding.Default, true);
+                writer.Write(true);
+                writer.Write(ex.Message);
             }
         }
 
