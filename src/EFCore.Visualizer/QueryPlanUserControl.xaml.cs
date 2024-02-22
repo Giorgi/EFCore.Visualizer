@@ -53,6 +53,11 @@ namespace EFCore.Visualizer
                 var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(AssemblyLocation, "WVData"));
                 await webView.EnsureCoreWebView2Async(environment);
 
+#if !DEBUG
+                webView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
+                webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false; 
+#endif
+
                 var response = await visualizerTarget.ObjectSource.RequestDataAsync(new ReadOnlySequence<byte>(), CancellationToken.None);
 
                 if (!response.HasValue)
