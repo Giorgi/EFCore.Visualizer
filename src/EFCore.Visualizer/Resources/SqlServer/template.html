@@ -7,12 +7,23 @@
     <link type="text/css" media="all" rel="stylesheet" href="qp.css" />
     <script type="text/javascript" src="qp.min.js"></script>
 </head>
-  <body>
-      <div id="container">
-          
-      </div>
-      <script>
-          QP.showPlan(document.getElementById("container"), '{plan}');
-      </script>
-  </body>
+<body>
+    <div id="container">
+
+    </div>
+    <script>
+        drawPlan();
+
+        window.addEventListener("resize", function (e) {
+            clearTimeout(window.resizedFinished);
+            window.resizedFinished = setTimeout(function () {
+                drawPlan();
+            }, 200);
+        });
+
+        function drawPlan() {
+            QP.showPlan(document.getElementById("container"), '{plan}');
+        }
+    </script>
+</body>
 </html>
