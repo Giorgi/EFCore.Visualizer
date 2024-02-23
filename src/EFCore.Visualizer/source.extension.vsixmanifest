@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="EFCore.Visualizer.a059bff0-3edd-4b37-921b-f93d93161013" Version="1.0.5" Language="en-US" Publisher="Giorgi Dalakishvili" />
+    <Identity Id="EFCore.Visualizer.a059bff0-3edd-4b37-921b-f93d93161013" Version="1.0.6" Language="en-US" Publisher="Giorgi Dalakishvili" />
     <DisplayName>EFCore.Visualizer</DisplayName>
     <Description xml:space="preserve">View Entity Framework Core query plan directly inside Visual Studio.</Description>
     <Preview>false</Preview>
