@@ -33,9 +33,27 @@ namespace IQueryableObjectSource
                 var query = queryable.ToQueryString();
                 var rawPlan = provider.ExtractPlan();
 
+                var buffer = new byte[3];
+                var isBackgroundDarkColor = false;
+
+                var r = 255;
+                var g = 255;
+                var b = 255;
+
+                if (incomingData.Read(buffer, 0, buffer.Length) == buffer.Length)
+                {
+                    r = (int)(Math.Min(buffer[0] * 1.1, 255));
+                    g = (int)(Math.Min(buffer[1] * 1.1, 255));
+                    b = (int)(Math.Min(buffer[2] * 1.1, 255));
+                }
+
+                isBackgroundDarkColor = r * 0.2126 + g * 0.7152 + b * 0.0722 < 255 / 2.0;
+
                 var planFile = Path.Combine(provider.GetPlanDirectory(ResourcesLocation), Path.ChangeExtension(Path.GetRandomFileName(), "html"));
 
                 var planPageHtml = File.ReadAllText(Path.Combine(provider.GetPlanDirectory(ResourcesLocation), "template.html"))
+                    .Replace("{backColor}", $"rgb({r} {g} {b})")
+                    .Replace("{textColor}", isBackgroundDarkColor ? "white" : "black")
                     .Replace("{plan}", JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(rawPlan).Replace("'", "\\'"))
                     .Replace("{query}", JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(query).Replace("'", "\\'"));
 

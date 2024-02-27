@@ -1,5 +1,5 @@
 ﻿using Microsoft.VisualStudio.Extensibility.DebuggerVisualizers;
-using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.Web.WebView2.Core;
 using Nerdbank.Streams;
 using System.Buffers;
@@ -46,9 +46,6 @@ namespace EFCore.Visualizer
             {
                 base.OnInitialized(e);
 
-                //var shellSettingsManager = new ShellSettingsManager(ServiceProvider.GlobalProvider);
-                //var store = shellSettingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
-                //var theme = store.GetString("General", "CurrentTheme", string.Empty);
 
                 var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(AssemblyLocation, "WVData"));
                 await webView.EnsureCoreWebView2Async(environment);
@@ -57,8 +54,9 @@ namespace EFCore.Visualizer
                 webView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
                 webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false; 
 #endif
+                var color = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
 
-                var response = await visualizerTarget.ObjectSource.RequestDataAsync(new ReadOnlySequence<byte>(), CancellationToken.None);
+                var response = await visualizerTarget.ObjectSource.RequestDataAsync(new ReadOnlySequence<byte>([color.R, color.G, color.B]), CancellationToken.None);
 
                 if (!response.HasValue)
                 {
