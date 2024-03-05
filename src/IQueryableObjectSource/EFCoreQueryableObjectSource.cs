@@ -42,9 +42,9 @@ namespace IQueryableObjectSource
 
                 if (incomingData.Read(buffer, 0, buffer.Length) == buffer.Length)
                 {
-                    r = (int)(Math.Min(buffer[0] * 1.1, 255));
-                    g = (int)(Math.Min(buffer[1] * 1.1, 255));
-                    b = (int)(Math.Min(buffer[2] * 1.1, 255));
+                    r = buffer[0];
+                    g = buffer[1];
+                    b = buffer[2];
                 }
 
                 isBackgroundDarkColor = r * 0.2126 + g * 0.7152 + b * 0.0722 < 255 / 2.0;

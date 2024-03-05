@@ -54,7 +54,7 @@ namespace EFCore.Visualizer
                 webView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
                 webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false; 
 #endif
-                var color = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
+                var color = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
 
                 var response = await visualizerTarget.ObjectSource.RequestDataAsync(new ReadOnlySequence<byte>([color.R, color.G, color.B]), CancellationToken.None);
 
