@@ -36,6 +36,11 @@ Click on 'Query Plan Visualizer' and the query plan will be displayed for your q
 
 ![PostgreSQL Plan](doc/PostgreSQLPlan1.png)
 
+## Known Issues:
+
+ - If query plan extraction takes more than 5 seconds, you will get [Evaluation timed out error](https://github.com/Giorgi/EFCore.Visualizer/issues/25)
+ - If your project uses Application Insights, you might get [Cannot evaluate expression since the function evaluation requires all threads to run.](https://github.com/Giorgi/EFCore.Visualizer/issues/28) when viewing query plan. **Workaround** - disable Application Insights when running your project with a debugger attached.
+
 ## Credits
 
 This extension uses [pev2](https://github.com/dalibo/pev2/) and [html-query-plan](https://github.com/JustinPealing/html-query-plan) to display query plans.
