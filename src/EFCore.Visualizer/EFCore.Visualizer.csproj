@@ -5,9 +5,6 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <VssdkCompatibleExtension>true</VssdkCompatibleExtension>
-    <StartAction>Program</StartAction>
-    <StartProgram>$(DevEnvDir)\devenv.exe</StartProgram>
-    <StartArguments>/rootsuffix Exp</StartArguments>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Fonts\fa-brands-400.ttf" />

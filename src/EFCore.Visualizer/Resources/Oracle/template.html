@@ -1,62 +1,95 @@
-﻿<!DOCTYPE HTML>
-<html>
+﻿<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <link type="text/css" media="all" rel="stylesheet" href="qp.css" />
-    <script type="text/javascript" src="qp.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query and Execution Plan</title>
     <style>
-        .qp-statement-header {
-            color: #333;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .qp-table {
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; 
+        }
+
+        .container {
             width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
+            max-width: 100%; 
+            margin: 0 auto;
+            background: #fff;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
-            .qp-table th, .qp-table td {
-                border: 1px solid #ddd;
-                padding: 8px;
-                text-align: left;
-            }
+        .query, .plan {
+            margin-bottom: 5px;
+        }
 
-            .qp-table th {
-                background-color: #f2f2f2;
-                color: #333;
-            }
+        .query {
+            margin: 0;
+            padding: 0;
+        }
 
-        .qp-plan-section {
-            font-family: monospace;
-            white-space: pre;
-            background-color: #f9f9f9;
-            padding: 10px;
+        pre {
+            white-space: pre; 
+            background: #f0f0f0;
             border: 1px solid #ddd;
-            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto; 
+            font-size: 13px;
+            max-width: 100%; 
+            word-wrap: normal; 
+        }
+
+        .line {
+            border-top: 2px solid #000;
+            margin: 2px 0;
         }
     </style>
 </head>
-<body style="background-color: #fff">
-    <div id="container">
-        <div class="qp-statement-header">
-            <h2>Execution Plan</h2>
+<body>
+
+    <div class="container">
+        <div class="query">
+            <pre id="query"></pre>
         </div>
 
-        <div class="qp-plan-section" id="execution-plan">
-            <!-- Execution plan will be inserted here -->
+        <div class="line"></div>
+
+        <div class="plan">
+            <pre id="plan"></pre>
         </div>
     </div>
 
     <script>
-        // Simulated Oracle DBMS_XPLAN.DISPLAY() output
-        const planText = `
-        {plan}
-            `;
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
-        // Insert the plan text into the container
-        document.getElementById("execution-plan").textContent = planText;
+        function replaceNewlines(text) {
+            return text.replace(/\r\n|\r|\n/g, '<br>');
+        }
+
+        const query = '{query}';
+        const plan = `{plan}`;
+
+        document.getElementById('query').innerHTML = escapeHtml(query);
+        document.getElementById('plan').innerHTML = replaceNewlines(escapeHtml(plan));
     </script>
+
 </body>
 </html>
