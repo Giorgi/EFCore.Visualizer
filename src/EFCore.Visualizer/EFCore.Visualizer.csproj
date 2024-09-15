@@ -11,6 +11,7 @@
     <None Remove="Fonts\fa-solid-900.ttf" />
     <None Remove="QueryPlanUserControl.xaml" />
     <None Remove="Resources\Postgres\template.html" />
+    <None Remove="Resources\Oracle\template.html" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,6 +53,9 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="Resources\SqlServer\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Resources\Oracle\*.*">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>
