@@ -1,0 +1,62 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <link type="text/css" media="all" rel="stylesheet" href="qp.css" />
+    <script type="text/javascript" src="qp.min.js"></script>
+    <style>
+        .qp-statement-header {
+            color: #333;
+        }
+
+        .qp-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+            .qp-table th, .qp-table td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+
+            .qp-table th {
+                background-color: #f2f2f2;
+                color: #333;
+            }
+
+        .qp-plan-section {
+            font-family: monospace;
+            white-space: pre;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body style="background-color: #fff">
+    <div id="container">
+        <div class="qp-statement-header">
+            <h2>Execution Plan</h2>
+        </div>
+
+        <div class="qp-plan-section" id="execution-plan">
+            <!-- Execution plan will be inserted here -->
+        </div>
+    </div>
+
+    <script>
+        // Simulated Oracle DBMS_XPLAN.DISPLAY() output
+        const planText = `
+        {plan}
+            `;
+
+        // Insert the plan text into the container
+        document.getElementById("execution-plan").textContent = planText;
+    </script>
+</body>
+</html>

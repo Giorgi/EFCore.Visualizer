@@ -84,3 +84,23 @@ class PostgresDatabaseProvider(DbCommand command) : DatabaseProvider(command)
 
     internal override string GetPlanDirectory(string baseDirectory) => Path.Combine(baseDirectory, "Postgres");
 }
+
+class OracleDatabaseProvider(DbCommand command) : DatabaseProvider(command)
+{
+    protected override string ExtractPlanInternal(DbCommand command)
+    {
+        command.CommandText = "EXPLAIN PLAN FOR " + command.CommandText;
+        command.ExecuteNonQuery();
+
+        // Querying the execution plan using DBMS_XPLAN
+        command.CommandText = "SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY())";
+        using var reader = command.ExecuteReader();
+
+        // Fetching the plan output
+        var plan = string.Join(Environment.NewLine, reader.Cast<IDataRecord>().Select(r => r.GetString(0)));
+
+        return plan;
+    }
+
+    internal override string GetPlanDirectory(string baseDirectory) => Path.Combine(baseDirectory, "Oracle");
+}

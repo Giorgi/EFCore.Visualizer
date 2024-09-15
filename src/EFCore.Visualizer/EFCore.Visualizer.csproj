@@ -5,12 +5,16 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <VssdkCompatibleExtension>true</VssdkCompatibleExtension>
+    <StartAction>Program</StartAction>
+    <StartProgram>$(DevEnvDir)\devenv.exe</StartProgram>
+    <StartArguments>/rootsuffix Exp</StartArguments>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Fonts\fa-brands-400.ttf" />
     <None Remove="Fonts\fa-solid-900.ttf" />
     <None Remove="QueryPlanUserControl.xaml" />
     <None Remove="Resources\Postgres\template.html" />
+    <None Remove="Resources\Oracle\template.html" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,6 +56,9 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="Resources\SqlServer\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Resources\Oracle\*.*">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>

@@ -77,6 +77,7 @@ namespace IQueryableObjectSource
             {
                 "Microsoft.Data.SqlClient.SqlCommand" => new SqlServerDatabaseProvider(command),
                 "Npgsql.NpgsqlCommand" => new PostgresDatabaseProvider(command),
+                "Oracle.ManagedDataAccess.Client.OracleCommand" => new OracleDatabaseProvider(command),
                 _ => null
             };
         }
