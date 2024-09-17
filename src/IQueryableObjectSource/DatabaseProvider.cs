@@ -89,17 +89,29 @@ class OracleDatabaseProvider(DbCommand command) : DatabaseProvider(command)
 {
     protected override string ExtractPlanInternal(DbCommand command)
     {
-        command.CommandText = "EXPLAIN PLAN FOR " + command.CommandText;
-        command.ExecuteNonQuery();
+        using var statisticsCommand = command.Connection.CreateCommand();
+        try
+        {
+            statisticsCommand.Transaction = command.Transaction;
+            statisticsCommand.CommandText = "ALTER SESSION SET statistics_level = ALL";
+            statisticsCommand.ExecuteNonQuery();
 
-        // Querying the execution plan using DBMS_XPLAN
-        command.CommandText = "SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY())";
-        using var reader = command.ExecuteReader();
+            // We need empty the reader stream, so V$SQL_PLAN has all the stats, otherwise when we will query the plan - we will get older plan
+            var res = command.ExecuteReader();
+            while (res.Read()) { };
 
-        // Fetching the plan output
-        var plan = string.Join(Environment.NewLine, reader.Cast<IDataRecord>().Select(r => r.GetString(0)));
+            statisticsCommand.CommandText = @"SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(format=>'ALLSTATS LAST +cost +bytes +outline +PEEKED_BINDS +PROJECTION +ALIAS'))";
+            using var reader = statisticsCommand.ExecuteReader();
 
-        return plan;
+            // Fetching the plan output
+            return string.Join(Environment.NewLine, reader.Cast<IDataRecord>().Select(r => r.GetString(0)));
+
+        }
+        finally
+        {
+            statisticsCommand.CommandText = "ALTER SESSION SET statistics_level = TYPICAL";
+            statisticsCommand.ExecuteNonQuery();
+        }
     }
 
     internal override string GetPlanDirectory(string baseDirectory) => Path.Combine(baseDirectory, "Oracle");

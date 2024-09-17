@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Query and Execution Plan</title>
+    <title>Query Execution Plan</title>
     <style>
         * {
             margin: 0;
@@ -29,14 +29,10 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
-        .query, .plan {
+        .plan {
             margin-bottom: 5px;
         }
 
-        .query {
-            margin: 0;
-            padding: 0;
-        }
 
         pre {
             white-space: pre; 
@@ -59,12 +55,6 @@
 <body>
 
     <div class="container">
-        <div class="query">
-            <pre id="query"></pre>
-        </div>
-
-        <div class="line"></div>
-
         <div class="plan">
             <pre id="plan"></pre>
         </div>
@@ -83,11 +73,7 @@
         function replaceNewlines(text) {
             return text.replace(/\r\n|\r|\n/g, '<br>');
         }
-
-        const query = '{query}';
         const plan = `{plan}`;
-
-        document.getElementById('query').innerHTML = escapeHtml(query);
         document.getElementById('plan').innerHTML = replaceNewlines(escapeHtml(plan));
     </script>
 
