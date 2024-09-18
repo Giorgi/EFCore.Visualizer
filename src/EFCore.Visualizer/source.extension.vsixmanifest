@@ -8,7 +8,7 @@
     <MoreInfo>https://github.com/Giorgi/EFCore.Visualizer</MoreInfo>
     <GettingStartedGuide>https://github.com/Giorgi/EFCore.Visualizer/blob/main/README.md#usage</GettingStartedGuide>
     <Icon>Images\IconSmall.png</Icon>
-    <Tags>EFCore, SQL Server, PostgreSQL, Visualizer, Query Plan</Tags>
+    <Tags>EFCore, SQL Server, PostgreSQL, Oracle, Visualizer, Query Plan</Tags>
   </Metadata>
   <Installation ExtensionType="VSSDK+VisualStudio.Extensibility">
     <InstallationTarget Version="[17.9, 18.0)" Id="Microsoft.VisualStudio.Community">

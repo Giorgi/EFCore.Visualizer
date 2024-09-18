@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Execution Plan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; 
+        }
+
+        .container {
+            width: 100%;
+            max-width: 100%; 
+            margin: 0 auto;
+            background: #fff;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .plan {
+            margin-bottom: 5px;
+        }
+
+
+        pre {
+            white-space: pre; 
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto; 
+            font-size: 13px;
+            max-width: 100%; 
+            word-wrap: normal; 
+        }
+
+        .line {
+            border-top: 2px solid #000;
+            margin: 2px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="plan">
+            <pre id="plan"></pre>
+        </div>
+    </div>
+
+    <script>
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function replaceNewlines(text) {
+            return text.replace(/\r\n|\r|\n/g, '<br>');
+        }
+        const plan = `{plan}`;
+        document.getElementById('plan').innerHTML = replaceNewlines(escapeHtml(plan));
+    </script>
+
+</body>
+</html>

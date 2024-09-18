@@ -11,14 +11,14 @@ View Entity Framework Core query plan directly inside Visual Studio.
 
 ## Introduction
 
-With Entity Framework Core query plan debugger visualizer, you can view the query plan of your queries directly inside Visual Studio. Currently, the visualizer supports SQL Server and PostgreSQL.
+With Entity Framework Core query plan debugger visualizer, you can view the query plan of your queries directly inside Visual Studio. Currently, the visualizer supports SQL Server, PostgreSQL and Oracle.
 
 > [!IMPORTANT] 
 > The visualizer requires **Visual Studio Version 17.9.0 ([Released on February 13th](https://devblogs.microsoft.com/visualstudio/visual-studio-2022-17-9-now-available/)) or newer** and supports **EF Core 7 or newer**.
 
 ## Usage
 
-After installing the [extension from the marketplace](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer), a new debugger visualizer will be added to Visual Studio. When debugging, hover over your queries and there will be an option to view the query plan:
+After installing the [extension from the marketplace](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer), a new debugger visualizer will be added to Visual Studio. When debugging, hover over your queries and there will be an option to view the query plan( Here we show acutal query plan which means it enforce query execution ):
 
 ![VariableVisualizer](doc/VariableVisualizer.png)
 
@@ -35,6 +35,11 @@ Click on 'Query Plan Visualizer' and the query plan will be displayed for your q
 ![PostgreSQL Plan](doc/PostgreSQLPlan2.png)
 
 ![PostgreSQL Plan](doc/PostgreSQLPlan1.png)
+
+### Oracle:
+Query plan also includes Actual IO stats, Outline data, Projections and Predicates.
+![Oracle Plan](doc/OraclePlan1.png)
+![Oracle Plan](doc/OraclePlan2.png)
 
 ## Known Issues:
 
