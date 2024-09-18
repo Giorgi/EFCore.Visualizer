@@ -37,7 +37,8 @@ Click on 'Query Plan Visualizer' and the query plan will be displayed for your q
 ![PostgreSQL Plan](doc/PostgreSQLPlan1.png)
 
 ### Oracle:
-The query plan also includes Actual IO stats, Outline data, Projections, and Predicates.
+
+The query plan includes Actual IO stats, Outline data, Projections, and Predicates.
 ![Oracle Plan](doc/OraclePlan1.png)
 ![Oracle Plan](doc/OraclePlan2.png)
 
