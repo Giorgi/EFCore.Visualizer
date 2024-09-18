@@ -97,7 +97,7 @@ class OracleDatabaseProvider(DbCommand command) : DatabaseProvider(command)
             statisticsCommand.ExecuteNonQuery();
 
             // We need empty the reader stream, so V$SQL_PLAN has all the stats, otherwise when we will query the plan - we will get older plan
-            var res = command.ExecuteReader();
+            using var res = command.ExecuteReader();
             while (res.Read()) { };
 
             statisticsCommand.CommandText = @"SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(format=>'ALLSTATS LAST +cost +bytes +outline +PEEKED_BINDS +PROJECTION +ALIAS'))";
