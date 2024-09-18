@@ -39,6 +39,7 @@ Click on 'Query Plan Visualizer' and the query plan will be displayed for your q
 ### Oracle:
 
 The query plan includes Actual IO stats, Outline data, Projections, and Predicates.
+
 ![Oracle Plan](doc/OraclePlan1.png)
 ![Oracle Plan](doc/OraclePlan2.png)
 
