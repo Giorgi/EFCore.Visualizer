@@ -96,7 +96,7 @@ class OracleDatabaseProvider(DbCommand command) : DatabaseProvider(command)
             statisticsCommand.CommandText = "ALTER SESSION SET statistics_level = ALL";
             statisticsCommand.ExecuteNonQuery();
 
-            // We need empty the reader stream, so V$SQL_PLAN has all the stats, otherwise when we will query the plan - we will get older plan
+            // We need to empty the reader stream, so V$SQL_PLAN has all the stats, otherwise when we will query the plan - we will get older plan
             using var res = command.ExecuteReader();
             while (res.Read()) { };
 
