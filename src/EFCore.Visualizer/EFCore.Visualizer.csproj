@@ -10,12 +10,16 @@
     <None Remove="Fonts\fa-brands-400.ttf" />
     <None Remove="Fonts\fa-solid-900.ttf" />
     <None Remove="QueryPlanUserControl.xaml" />
+    <None Remove="Resources\Common\template.html" />
     <None Remove="Resources\Postgres\template.html" />
     <None Remove="Resources\Oracle\template.html" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="..\IQueryableObjectSource\bin\$(Configuration)\net6\IQueryableObjectSource.dll" Link="netcoreapp\IQueryableObjectSource.dll" />
+    <Content Include="Resources\Common\template.html">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -56,6 +60,9 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="Resources\Oracle\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Resources\Common\*.*">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>

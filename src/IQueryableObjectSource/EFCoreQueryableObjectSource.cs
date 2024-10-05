@@ -9,6 +9,7 @@ using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using System.Net;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Diagnostics;
 
 namespace IQueryableObjectSource
 {
@@ -130,27 +131,15 @@ namespace IQueryableObjectSource
         private static string GenerateHtml(string query)
         {
             string escapedQuery = WebUtility.HtmlEncode(query);
+            string templatePath = Path.Combine(ResourcesLocation,"Common", "template.html");
+            if (!File.Exists(templatePath))
+            {
+                throw new FileNotFoundException("Common Query template file not found", templatePath);
+            }
 
-            // Simple HTML structure to display the query
-            StringBuilder htmlBuilder = new StringBuilder();
-            htmlBuilder.AppendLine("<html>");
-            htmlBuilder.AppendLine("<head><title>Query Plan Visualizer</title>");
-            htmlBuilder.AppendLine("<style>");
-            htmlBuilder.AppendLine("body { font-family: Arial, sans-serif; margin: 20px; }");
-            htmlBuilder.AppendLine("h2 { color: #333; }");
-            htmlBuilder.AppendLine(".query-box { background-color: #f4f4f4; padding: 10px; border-radius: 5px; border: 1px solid #ccc; overflow-x: auto; max-width: 100%; }");
-            htmlBuilder.AppendLine("pre { white-space: pre-wrap; word-wrap: break-word; }");
-            htmlBuilder.AppendLine("</style>");
-            htmlBuilder.AppendLine("</head>");
-            htmlBuilder.AppendLine("<body>");
-            htmlBuilder.AppendLine("<h2>SQL Query</h2>");
-            htmlBuilder.AppendLine("<div class='query-box'>");
-            htmlBuilder.AppendLine("<pre>" + escapedQuery + "</pre>");
-            htmlBuilder.AppendLine("</div>");
-            htmlBuilder.AppendLine("</body>");
-            htmlBuilder.AppendLine("</html>");
-
-            return htmlBuilder.ToString();
+            string templateContent = File.ReadAllText(templatePath);
+            string finalHtml = templateContent.Replace("{query}", escapedQuery);
+            return finalHtml;
         }
 
 
