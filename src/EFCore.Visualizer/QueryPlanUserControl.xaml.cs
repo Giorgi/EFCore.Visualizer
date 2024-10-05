@@ -42,6 +42,7 @@ namespace EFCore.Visualizer
         protected override async void OnInitialized(EventArgs e)
 #pragma warning restore VSTHRD100 // Avoid async void methods
         {
+            var query = string.Empty;
             try
             {
                 base.OnInitialized(e);
@@ -49,6 +50,8 @@ namespace EFCore.Visualizer
 
                 var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(AssemblyLocation, "WVData"));
                 await webView.EnsureCoreWebView2Async(environment);
+
+                query = await GetQueryAsync();
 
 #if !DEBUG
                 webView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
@@ -84,8 +87,37 @@ namespace EFCore.Visualizer
             }
             catch (Exception ex)
             {
+                if (!string.IsNullOrEmpty(query))
+                    webView.CoreWebView2.NavigateToString(query);
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private async Task<string> GetQueryAsync()
+        {
+            var query = string.Empty;
+            var response = await visualizerTarget.ObjectSource.RequestDataAsync(ConvertStringToReadOnlySequence("GetQuery"), CancellationToken.None);
+            if (response.HasValue)
+            {
+                using var stream = response.Value.AsStream();
+                using var binaryReader = new BinaryReader(stream, Encoding.Default);
+                var isError = binaryReader.ReadBoolean();
+                if (!isError)
+                {
+                    query = binaryReader.ReadString();
+                }
+            }
+            return query;
+        }
+        private static ReadOnlySequence<byte> ConvertStringToReadOnlySequence(string input)
+        {
+            byte[] byteArray = Encoding.UTF8.GetBytes(input);
+
+            ReadOnlyMemory<byte> readOnlyMemory = new ReadOnlyMemory<byte>(byteArray);
+
+            ReadOnlySequence<byte> readOnlySequence = new ReadOnlySequence<byte>(readOnlyMemory);
+
+            return readOnlySequence;
         }
 
         private void ButtonReviewClick(object sender, RoutedEventArgs e)
