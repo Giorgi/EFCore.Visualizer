@@ -55,21 +55,19 @@ public partial class QueryPlanUserControl : UserControl
             webView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
             webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false; 
 #endif
-            (var error, query) = await GetQueryAsync();
+            (var _, var _, query) = await GetQueryAsync();
 
-            var queryPlanAsync = await GetQueryPlanAsync();
+            (var isError, var error, planFilePath)= await GetQueryPlanAsync();
 
-            if (queryPlanAsync.error)
+            if (isError)
             {
-                if (!string.IsNullOrWhiteSpace(queryPlanAsync.data))
+                if (!string.IsNullOrWhiteSpace(error))
                 {
-                    MessageBox.Show(queryPlanAsync.data, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(error, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
             {
-                planFilePath = queryPlanAsync.data;
-
                 if (!string.IsNullOrEmpty(planFilePath))
                 {
                     webView.CoreWebView2.Navigate(planFilePath);
@@ -87,7 +85,7 @@ public partial class QueryPlanUserControl : UserControl
         }
     }
 
-    private async Task<(bool error, string data)> GetQueryAsync()
+    private async Task<(bool isError, string error, string data)> GetQueryAsync()
     {
         var message = new ReadOnlySequence<byte>([(byte)OperationType.GetQuery]);
         var response = await visualizerTarget.ObjectSource.RequestDataAsync(message, CancellationToken.None);
@@ -95,7 +93,7 @@ public partial class QueryPlanUserControl : UserControl
         return ReadString(response);
     }
 
-    private async Task<(bool error, string data)> GetQueryPlanAsync()
+    private async Task<(bool isError, string error, string data)> GetQueryPlanAsync()
     {
         var color = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
 
@@ -105,7 +103,7 @@ public partial class QueryPlanUserControl : UserControl
         return ReadString(response);
     }
 
-    private static (bool, string) ReadString(ReadOnlySequence<byte>? response)
+    private static (bool isError, string error, string data) ReadString(ReadOnlySequence<byte>? response)
     {
         if (response.HasValue)
         {
@@ -113,10 +111,11 @@ public partial class QueryPlanUserControl : UserControl
             using var binaryReader = new BinaryReader(stream, Encoding.Default);
             var isError = binaryReader.ReadBoolean();
 
-            return (isError, binaryReader.ReadString());
+            var data = binaryReader.ReadString();
+            return isError? (isError, data, "") : (isError, "", data);
         }
 
-        return (true, string.Empty);
+        return (true, string.Empty, string.Empty);
     }
 
     private void ButtonReviewClick(object sender, RoutedEventArgs e)
