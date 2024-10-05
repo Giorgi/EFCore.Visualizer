@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using IQueryableObjectSource;
 
 namespace EFCore.Visualizer
 {
@@ -96,7 +97,7 @@ namespace EFCore.Visualizer
         private async Task<string> GetQueryAsync()
         {
             var query = string.Empty;
-            var response = await visualizerTarget.ObjectSource.RequestDataAsync(ConvertStringToReadOnlySequence("GetQuery"), CancellationToken.None);
+            var response = await visualizerTarget.ObjectSource.RequestDataAsync(ConvertEnumToReadOnlySequence(OperationType.GetQuery),CancellationToken.None);
             if (response.HasValue)
             {
                 using var stream = response.Value.AsStream();
@@ -109,15 +110,10 @@ namespace EFCore.Visualizer
             }
             return query;
         }
-        private static ReadOnlySequence<byte> ConvertStringToReadOnlySequence(string input)
+        private ReadOnlySequence<byte> ConvertEnumToReadOnlySequence(OperationType operation)
         {
-            byte[] byteArray = Encoding.UTF8.GetBytes(input);
-
-            ReadOnlyMemory<byte> readOnlyMemory = new ReadOnlyMemory<byte>(byteArray);
-
-            ReadOnlySequence<byte> readOnlySequence = new ReadOnlySequence<byte>(readOnlyMemory);
-
-            return readOnlySequence;
+            var operationByte = new byte[] { (byte)operation };
+            return new ReadOnlySequence<byte>(operationByte);
         }
 
         private void ButtonReviewClick(object sender, RoutedEventArgs e)

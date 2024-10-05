@@ -25,12 +25,15 @@ namespace IQueryableObjectSource
 
             try
             {
-                var dbOperation = ConvertStreamToString(incomingData);
-                switch (dbOperation)
+                var operationType = GetOperationType(incomingData);
+                switch (operationType)
                 {
-                    case "GetQuery":
+                    case OperationType.GetQuery:
                         HandleGetQuery(queryable, outgoingData);
                         break;
+
+                    case OperationType.NotSupported:
+                        throw new InvalidOperationException("Unknown operation type."); 
 
                     default:
                         HandleGetQueryPlan(queryable, incomingData, outgoingData);
@@ -110,23 +113,17 @@ namespace IQueryableObjectSource
             writer.Write(errorMessage);
         }
 
-        public static string ConvertStreamToString(Stream stream)
+        public static OperationType GetOperationType(Stream stream)
         {
-            using (MemoryStream memoryStream = new MemoryStream())
+            try
             {
-                stream.CopyTo(memoryStream);
-                byte[] byteArray = memoryStream.ToArray();
-
-                //Try to convert byte array to a string using UTF-8 encoding
-                try
-                {
-                    string result = Encoding.UTF8.GetString(byteArray);
-                    return result;
-                }
-                catch (Exception)
-                {
-                    return "GetQueryPlan";
-                }
+                var operationBuffer = new byte[1];
+                stream.Read(operationBuffer, 0, 1);
+                return (OperationType)operationBuffer[0];
+            }
+            catch (Exception)
+            {
+                return OperationType.NotSupported;
             }
         }
 

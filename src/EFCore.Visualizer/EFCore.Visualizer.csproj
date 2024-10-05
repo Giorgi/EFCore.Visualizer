@@ -61,6 +61,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\IQueryableObjectSource\OperationType.cs" Link="OperationType.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Fonts\fa-brands-400.ttf" />
     <Resource Include="Fonts\fa-solid-900.ttf" />
   </ItemGroup>
