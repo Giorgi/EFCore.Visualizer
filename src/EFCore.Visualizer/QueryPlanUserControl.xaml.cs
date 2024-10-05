@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.Extensibility.DebuggerVisualizers;
+﻿using IQueryableObjectSource;
+using Microsoft.VisualStudio.Extensibility.DebuggerVisualizers;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.Web.WebView2.Core;
 using Nerdbank.Streams;
@@ -7,7 +8,6 @@ using System.Diagnostics;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using IQueryableObjectSource;
 
 namespace EFCore.Visualizer
 {
@@ -48,37 +48,27 @@ namespace EFCore.Visualizer
             {
                 base.OnInitialized(e);
 
-
                 var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(AssemblyLocation, "WVData"));
                 await webView.EnsureCoreWebView2Async(environment);
-
-                query = await GetQueryAsync();
 
 #if !DEBUG
                 webView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
                 webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false; 
 #endif
-                var color = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
+                (var error, query) = await GetQueryAsync();
 
-                var response = await visualizerTarget.ObjectSource.RequestDataAsync(new ReadOnlySequence<byte>([color.R, color.G, color.B]), CancellationToken.None);
+                var queryPlanAsync = await GetQueryPlanAsync();
 
-                if (!response.HasValue)
+                if (queryPlanAsync.error)
                 {
-                    return;
-                }
-
-                using var stream = response.Value.AsStream();
-                using var binaryReader = new BinaryReader(stream, Encoding.Default);
-
-                var isError = binaryReader.ReadBoolean();
-
-                if (isError)
-                {
-                    MessageBox.Show(binaryReader.ReadString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    if (!string.IsNullOrWhiteSpace(queryPlanAsync.data))
+                    {
+                        MessageBox.Show(queryPlanAsync.data, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
                 else
                 {
-                    planFilePath = binaryReader.ReadString();
+                    planFilePath = queryPlanAsync.data;
 
                     if (!string.IsNullOrEmpty(planFilePath))
                     {
@@ -89,31 +79,44 @@ namespace EFCore.Visualizer
             catch (Exception ex)
             {
                 if (!string.IsNullOrEmpty(query))
+                {
                     webView.CoreWebView2.NavigateToString(query);
+                }
+
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private async Task<string> GetQueryAsync()
+        private async Task<(bool error, string data)> GetQueryAsync()
         {
-            var query = string.Empty;
-            var response = await visualizerTarget.ObjectSource.RequestDataAsync(ConvertEnumToReadOnlySequence(OperationType.GetQuery),CancellationToken.None);
+            var message = new ReadOnlySequence<byte>([(byte)OperationType.GetQuery]);
+            var response = await visualizerTarget.ObjectSource.RequestDataAsync(message, CancellationToken.None);
+
+            return ReadString(response);
+        }
+
+        private async Task<(bool error, string data)> GetQueryPlanAsync()
+        {
+            var color = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
+
+            var message = new ReadOnlySequence<byte>([(byte)OperationType.GetQueryPlan, color.R, color.G, color.B]);
+            var response = await visualizerTarget.ObjectSource.RequestDataAsync(message, CancellationToken.None);
+
+            return ReadString(response);
+        }
+
+        private static (bool, string) ReadString(ReadOnlySequence<byte>? response)
+        {
             if (response.HasValue)
             {
                 using var stream = response.Value.AsStream();
                 using var binaryReader = new BinaryReader(stream, Encoding.Default);
                 var isError = binaryReader.ReadBoolean();
-                if (!isError)
-                {
-                    query = binaryReader.ReadString();
-                }
+
+                return (isError, binaryReader.ReadString());
             }
-            return query;
-        }
-        private ReadOnlySequence<byte> ConvertEnumToReadOnlySequence(OperationType operation)
-        {
-            var operationByte = new byte[] { (byte)operation };
-            return new ReadOnlySequence<byte>(operationByte);
+
+            return (true, string.Empty);
         }
 
         private void ButtonReviewClick(object sender, RoutedEventArgs e)

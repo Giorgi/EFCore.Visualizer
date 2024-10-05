@@ -1,15 +1,11 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.DebuggerVisualizers;
+using System;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Threading.Tasks;
 using System.Net;
-using Microsoft.EntityFrameworkCore.Storage;
-using System.Diagnostics;
+using System.Text.Encodings.Web;
 
 namespace IQueryableObjectSource
 {
@@ -26,33 +22,34 @@ namespace IQueryableObjectSource
 
             try
             {
-                var operationType = GetOperationType(incomingData);
+                var operationType = ReadOperationType(incomingData);
                 switch (operationType)
                 {
                     case OperationType.GetQuery:
-                        HandleGetQuery(queryable, outgoingData);
+                        GetQuery(queryable, outgoingData);
                         break;
-
-                    case OperationType.NotSupported:
-                        throw new InvalidOperationException("Unknown operation type."); 
-
+                    case OperationType.GetQueryPlan:
+                        GetQueryPlan(queryable, incomingData, outgoingData);
+                        break;
+                    case OperationType.Unknown:
                     default:
-                        HandleGetQueryPlan(queryable, incomingData, outgoingData);
+                        outgoingData.WriteError("Unknown operation type");
                         break;
                 }
             }
             catch (Exception ex)
             {
-                WriteError(outgoingData, ex.Message);
+                outgoingData.WriteError(ex.Message);
             }
         }
-        private void HandleGetQuery(IQueryable queryable, Stream outgoingData)
+
+        private static void GetQuery(IQueryable queryable, Stream outgoingData)
         {
-            using var queryWriter = new BinaryWriter(outgoingData, Encoding.Default, true);
-            queryWriter.Write(false); // Indicates no error
-            queryWriter.Write(GenerateHtml(queryable.ToQueryString()));
+            var html = GenerateQueryHtml(queryable.ToQueryString());
+            outgoingData.WriteSuccess(html);
         }
-        private void HandleGetQueryPlan(IQueryable queryable, Stream incomingData, Stream outgoingData)
+
+        private static void GetQueryPlan(IQueryable queryable, Stream incomingData, Stream outgoingData)
         {
             using var command = queryable.CreateDbCommand();
             var provider = GetDatabaseProvider(command);
@@ -65,34 +62,17 @@ namespace IQueryableObjectSource
             var query = queryable.ToQueryString();
             var rawPlan = provider.ExtractPlan();
 
+            var planFile = GeneratePlanFile(provider, query, rawPlan, incomingData);
+
+            outgoingData.WriteSuccess(planFile);
+        }
+
+        private static string GeneratePlanFile(DatabaseProvider provider, string query, string rawPlan, Stream incomingData)
+        {
             var (r, g, b) = ReadBackgroundColor(incomingData);
-            var isBackgroundDarkColor = r * 0.2126 + g * 0.7152 + b * 0.0722 < 255 / 2.0; 
 
-            var planFile = GeneratePlanFile(provider, query, rawPlan, r, g, b, isBackgroundDarkColor);
+            var isBackgroundDarkColor = r * 0.2126 + g * 0.7152 + b * 0.0722 < 255 / 2.0;
 
-            using var writer = new BinaryWriter(outgoingData, Encoding.Default, true);
-            writer.Write(false); // Indicates no error
-            writer.Write(planFile);
-        }
-        private (int r, int g, int b) ReadBackgroundColor(Stream incomingData)
-        {
-            var buffer = new byte[3];
-            var r = 255;
-            var g = 255;
-            var b = 255;
-
-            if (incomingData.Read(buffer, 0, buffer.Length) == buffer.Length)
-            {
-                r = buffer[0];
-                g = buffer[1];
-                b = buffer[2];
-            }
-
-            return (r, g, b);
-        }
-
-        private string GeneratePlanFile(DatabaseProvider provider, string query, string rawPlan, int r, int g, int b, bool isBackgroundDarkColor)
-        {
             var planDirectory = provider.GetPlanDirectory(ResourcesLocation);
             var planFile = Path.Combine(planDirectory, Path.ChangeExtension(Path.GetRandomFileName(), "html"));
 
@@ -107,39 +87,43 @@ namespace IQueryableObjectSource
             return planFile;
         }
 
-        private void WriteError(Stream outgoingData, string errorMessage)
+        private static string GenerateQueryHtml(string query)
         {
-            using var writer = new BinaryWriter(outgoingData, Encoding.Default, true);
-            writer.Write(true); // Indicates an error occurred
-            writer.Write(errorMessage);
-        }
-
-        public static OperationType GetOperationType(Stream stream)
-        {
-            try
-            {
-                var operationBuffer = new byte[1];
-                stream.Read(operationBuffer, 0, 1);
-                return (OperationType)operationBuffer[0];
-            }
-            catch (Exception)
-            {
-                return OperationType.NotSupported;
-            }
-        }
-
-        private static string GenerateHtml(string query)
-        {
-            string escapedQuery = WebUtility.HtmlEncode(query);
-            string templatePath = Path.Combine(ResourcesLocation,"Common", "template.html");
+            var escapedQuery = WebUtility.HtmlEncode(query);
+            var templatePath = Path.Combine(ResourcesLocation, "Common", "template.html");
             if (!File.Exists(templatePath))
             {
                 throw new FileNotFoundException("Common Query template file not found", templatePath);
             }
 
-            string templateContent = File.ReadAllText(templatePath);
-            string finalHtml = templateContent.Replace("{query}", escapedQuery);
+            var templateContent = File.ReadAllText(templatePath);
+            var finalHtml = templateContent.Replace("{query}", escapedQuery);
             return finalHtml;
+        }
+
+        private static OperationType ReadOperationType(Stream stream)
+        {
+            var operationBuffer = new byte[1];
+            if (stream.Read(operationBuffer, 0, 1) == operationBuffer.Length)
+            {
+                if (Enum.IsDefined(typeof(OperationType), operationBuffer[0]))
+                {
+                    return (OperationType)operationBuffer[0];
+                }
+            }
+            return OperationType.Unknown;
+        }
+
+        private static (int r, int g, int b) ReadBackgroundColor(Stream incomingData)
+        {
+            var buffer = new byte[3];
+
+            if (incomingData.Read(buffer, 0, buffer.Length) == buffer.Length)
+            {
+                return (buffer[0], buffer[1], buffer[2]);
+            }
+
+            return (255, 255, 255);
         }
 
 
