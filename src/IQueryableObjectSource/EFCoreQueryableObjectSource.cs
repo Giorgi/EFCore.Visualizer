@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.DebuggerVisualizers;
 using System;
 using System.Data.Common;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -26,7 +27,7 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
             switch (operationType)
             {
                 case OperationType.GetQuery:
-                    GetQuery(queryable, outgoingData);
+                    GetQuery(queryable, incomingData, outgoingData);
                     break;
                 case OperationType.GetQueryPlan:
                     GetQueryPlan(queryable, incomingData, outgoingData);
@@ -43,9 +44,9 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
         }
     }
 
-    private static void GetQuery(IQueryable queryable, Stream outgoingData)
+    private static void GetQuery(IQueryable queryable, Stream incomingData, Stream outgoingData)
     {
-        var html = GenerateQueryHtml(queryable.ToQueryString());
+        var html = GenerateQueryFile(queryable.ToQueryString(), incomingData);
         outgoingData.WriteSuccess(html);
     }
 
@@ -58,7 +59,7 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
         {
             return;
         }
-
+        
         var query = queryable.ToQueryString();
         var rawPlan = provider.ExtractPlan();
 
@@ -69,15 +70,15 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
 
     private static string GeneratePlanFile(DatabaseProvider provider, string query, string rawPlan, Stream incomingData)
     {
-        var (r, g, b) = ReadBackgroundColor(incomingData);
+        var color = ReadBackgroundColor(incomingData);
 
-        var isBackgroundDarkColor = r * 0.2126 + g * 0.7152 + b * 0.0722 < 255 / 2.0;
+        var isBackgroundDarkColor = IsBackgroundDarkColor(color);
 
         var planDirectory = provider.GetPlanDirectory(ResourcesLocation);
         var planFile = Path.Combine(planDirectory, Path.ChangeExtension(Path.GetRandomFileName(), "html"));
 
         var planPageHtml = File.ReadAllText(Path.Combine(planDirectory, "template.html"))
-            .Replace("{backColor}", $"rgb({r} {g} {b})")
+            .Replace("{backColor}", $"rgb({color.R} {color.G} {color.B})")
             .Replace("{textColor}", isBackgroundDarkColor ? "white" : "black")
             .Replace("{plan}", JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(rawPlan).Replace("'", "\\'"))
             .Replace("{query}", JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(query).Replace("'", "\\'"));
@@ -87,19 +88,33 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
         return planFile;
     }
 
-    private static string GenerateQueryHtml(string query)
+    private static string GenerateQueryFile(string query, Stream incomingData)
     {
-        var escapedQuery = WebUtility.HtmlEncode(query);
+        var color = ReadBackgroundColor(incomingData);
+
+        var isBackgroundDarkColor = IsBackgroundDarkColor(color);
+
         var templatePath = Path.Combine(ResourcesLocation, "Common", "template.html");
         if (!File.Exists(templatePath))
         {
             throw new FileNotFoundException("Common Query template file not found", templatePath);
         }
 
+        var queryDirectory = Path.Combine(ResourcesLocation, "Common");
+        var queryFile = Path.Combine(queryDirectory, Path.ChangeExtension(Path.GetRandomFileName(), "html"));
+
         var templateContent = File.ReadAllText(templatePath);
-        var finalHtml = templateContent.Replace("{query}", escapedQuery);
-        return finalHtml;
+
+        var finalHtml = templateContent.Replace("{query}", WebUtility.HtmlEncode(query))
+            .Replace("{backColor}", $"rgb({color.R} {color.G} {color.B})")
+            .Replace("{textColor}", isBackgroundDarkColor ? "white" : "black");
+
+        File.WriteAllText(queryFile, finalHtml);
+
+        return queryFile;
     }
+
+    private static bool IsBackgroundDarkColor(Color color) => color.R * 0.2126 + color.G * 0.7152 + color.B * 0.0722 < 255 / 2.0;
 
     private static OperationType ReadOperationType(Stream stream)
     {
@@ -114,16 +129,16 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
         return OperationType.Unknown;
     }
 
-    private static (int r, int g, int b) ReadBackgroundColor(Stream incomingData)
+    private static Color ReadBackgroundColor(Stream incomingData)
     {
         var buffer = new byte[3];
 
         if (incomingData.Read(buffer, 0, buffer.Length) == buffer.Length)
         {
-            return (buffer[0], buffer[1], buffer[2]);
+            return Color.FromArgb(buffer[0], buffer[1], buffer[2]);
         }
 
-        return (255, 255, 255);
+        return Color.White;
     }
 
 

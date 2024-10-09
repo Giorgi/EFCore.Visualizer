@@ -15,7 +15,7 @@ public partial class QueryPlanUserControl : UserControl
 {
     private readonly VisualizerTarget visualizerTarget;
     private static readonly string AssemblyLocation = Path.GetDirectoryName(typeof(QueryPlanUserControl).Assembly.Location);
-    private string? planFilePath;
+    private string? filePath;
 
     public QueryPlanUserControl(VisualizerTarget visualizerTarget)
     {
@@ -27,14 +27,7 @@ public partial class QueryPlanUserControl : UserControl
 
     private void QueryPlanUserControlUnloaded(object sender, RoutedEventArgs e)
     {
-        try
-        {
-            File.Delete(planFilePath);
-        }
-        catch
-        {
-            // Ignore
-        }
+        SafeDeleteFile(filePath);
 
         Unloaded -= QueryPlanUserControlUnloaded;
     }
@@ -43,7 +36,6 @@ public partial class QueryPlanUserControl : UserControl
     protected override async void OnInitialized(EventArgs e)
 #pragma warning restore VSTHRD100 // Avoid async void methods
     {
-        var query = string.Empty;
         try
         {
             base.OnInitialized(e);
@@ -53,41 +45,40 @@ public partial class QueryPlanUserControl : UserControl
 
 #if !DEBUG
             webView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
-            webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false; 
+            webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
 #endif
-            (var _, var _, query) = await GetQueryAsync();
+            (var _, var _, filePath) = await GetQueryAsync();
 
-            (var isError, var error, planFilePath)= await GetQueryPlanAsync();
+            var (isError, error, planFilePath) = await GetQueryPlanAsync();
 
-            if (isError)
+            if (isError && !string.IsNullOrWhiteSpace(error))
             {
-                if (!string.IsNullOrWhiteSpace(error))
-                {
-                    MessageBox.Show(error, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                MessageBox.Show(error, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else
             {
-                if (!string.IsNullOrEmpty(planFilePath))
-                {
-                    webView.CoreWebView2.Navigate(planFilePath);
-                }
+                SafeDeleteFile(filePath);
+                filePath = planFilePath;
             }
         }
         catch (Exception ex)
         {
-            if (!string.IsNullOrEmpty(query))
+            MessageBox.Show("Cannot retrieve query plan: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            if (!string.IsNullOrEmpty(filePath))
             {
-                webView.CoreWebView2.NavigateToString(query);
+                webView.CoreWebView2.Navigate(filePath);
             }
-
-            MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
     private async Task<(bool isError, string error, string data)> GetQueryAsync()
     {
-        var message = new ReadOnlySequence<byte>([(byte)OperationType.GetQuery]);
+        var color = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
+
+        var message = new ReadOnlySequence<byte>([(byte)OperationType.GetQuery, color.R, color.G, color.B]);
         var response = await visualizerTarget.ObjectSource.RequestDataAsync(message, CancellationToken.None);
 
         return ReadString(response);
@@ -112,7 +103,7 @@ public partial class QueryPlanUserControl : UserControl
             var isError = binaryReader.ReadBoolean();
 
             var data = binaryReader.ReadString();
-            return isError? (isError, data, "") : (isError, "", data);
+            return isError ? (isError, data, "") : (isError, "", data);
         }
 
         return (true, string.Empty, string.Empty);
@@ -143,6 +134,20 @@ public partial class QueryPlanUserControl : UserControl
         try
         {
             Process.Start(url);
+        }
+        catch
+        {
+            // Ignore
+        }
+    }
+
+    private static void SafeDeleteFile(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        try
+        {
+            File.Delete(path);
         }
         catch
         {
