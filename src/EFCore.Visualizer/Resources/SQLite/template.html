@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>SQLite Query Plan</title>
+    <link rel="stylesheet" href="treeflex.css">
+    <style>
+        .tf-tree {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            color: {textColor};
+            background-color: {backColor};
+        }
+
+        .tf-custom .tf-nc:before,
+        .tf-custom .tf-nc:after {
+            border-left-color: steelblue;
+        }
+
+        .tf-custom li li:before {
+            border-top-color: steelblue;
+        }
+
+        .tf-custom .tf-nc {
+            padding: 5px 10px;
+            border: .0625em solid steelblue;
+            border-radius: 5px;
+            max-width: 350px;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="tf-tree tf-custom">
+        {plan}
+    </div>
+</body>
+</html>

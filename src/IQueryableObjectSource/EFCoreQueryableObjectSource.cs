@@ -6,7 +6,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text.Encodings.Web;
 
 namespace IQueryableObjectSource;
 
@@ -80,8 +79,8 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
         var planPageHtml = File.ReadAllText(Path.Combine(planDirectory, "template.html"))
             .Replace("{backColor}", $"rgb({color.R} {color.G} {color.B})")
             .Replace("{textColor}", isBackgroundDarkColor ? "white" : "black")
-            .Replace("{plan}", JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(rawPlan).Replace("'", "\\'"))
-            .Replace("{query}", JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(query).Replace("'", "\\'"));
+            .Replace("{plan}", provider.Encode(rawPlan))
+            .Replace("{query}", provider.Encode(query));
 
         File.WriteAllText(planFile, planPageHtml);
 
@@ -149,6 +148,7 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
             "Microsoft.Data.SqlClient.SqlCommand" => new SqlServerDatabaseProvider(command),
             "Npgsql.NpgsqlCommand" => new PostgresDatabaseProvider(command),
             "Oracle.ManagedDataAccess.Client.OracleCommand" => new OracleDatabaseProvider(command),
+            "Microsoft.Data.Sqlite.SqliteCommand" => new SQLiteDatabaseProvider(command),
             _ => null
         };
     }

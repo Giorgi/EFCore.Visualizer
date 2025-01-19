@@ -13,6 +13,7 @@
     <None Remove="Resources\Common\template.html" />
     <None Remove="Resources\Postgres\template.html" />
     <None Remove="Resources\Oracle\template.html" />
+    <None Remove="Resources\SQLite\template.html" />
   </ItemGroup>
 
   <ItemGroup>
@@ -63,6 +64,9 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="Resources\Common\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Resources\SQLite\*.*">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>

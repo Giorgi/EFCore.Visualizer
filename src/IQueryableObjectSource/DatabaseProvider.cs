@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Data.Common;
+using System.Text.Encodings.Web;
 
 namespace IQueryableObjectSource;
 
@@ -31,5 +32,8 @@ internal abstract class DatabaseProvider(DbCommand command)
     }
 
     protected abstract string ExtractPlanInternal(DbCommand command);
+
     internal abstract string GetPlanDirectory(string baseDirectory);
+
+    public virtual string Encode(string input) => JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(input).Replace("'", "\\'");
 }
