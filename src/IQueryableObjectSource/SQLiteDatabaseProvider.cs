@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
@@ -49,7 +49,7 @@ internal class SQLiteDatabaseProvider(DbCommand command) : DatabaseProvider(comm
             {
                 builder.AppendLine("<li>");
 
-                builder.AppendLine($"<span class=\"tf-nc\">{WebUtility.HtmlEncode(item.detail)}</span>");
+                builder.AppendLine($"<span class=\"tf-nc\"><span class=\"indicator\">▼</span>{WebUtility.HtmlEncode(item.detail)}</span>");
 
                 BuildIndentedPlanHtml(items, item.id, builder);
 

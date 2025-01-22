@@ -26,10 +26,48 @@
             padding: 5px 10px;
             border: .0625em solid steelblue;
             border-radius: 5px;
-            max-width: 350px;
+            max-width: 380px;
             word-wrap: break-word;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .tf-custom .tf-nc:hover {
+            background-color: rgba(70, 130, 180, 0.1);
+            transform: scale(1.02);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .indicator {
+            margin-right: 8px;
+            color: steelblue;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .tf-custom li.collapsed > ul {
+            display: none;
+        }
+
+        .tf-custom li.collapsed > .tf-nc::after {
+            display: none;
         }
     </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.tf-nc').forEach(node => {
+            node.addEventListener('click', e => {
+                e.stopPropagation();
+                const li = node.parentElement;
+                li.classList.toggle('collapsed');
+                const indicator = node.querySelector('.indicator');
+                indicator.textContent = li.classList.contains('collapsed') ? '▶' : '▼';
+            });
+        });
+    });
+    </script>
 </head>
 <body>
     <div class="tf-tree tf-custom">
