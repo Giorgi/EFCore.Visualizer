@@ -56,15 +56,23 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
 
         if (provider == null)
         {
+            outgoingData.WriteError($"Unsupported database provider {command.GetType().FullName}");
             return;
         }
-        
-        var query = queryable.ToQueryString();
-        var rawPlan = provider.ExtractPlan();
 
-        var planFile = GeneratePlanFile(provider, query, rawPlan, incomingData);
+        try
+        {
+            var query = queryable.ToQueryString();
+            var rawPlan = provider.ExtractPlan();
 
-        outgoingData.WriteSuccess(planFile);
+            var planFile = GeneratePlanFile(provider, query, rawPlan, incomingData);
+
+            outgoingData.WriteSuccess(planFile);
+        }
+        catch (Exception ex)
+        {
+            outgoingData.WriteError($"Failed to extract execution plan. {ex.Message}");
+        }
     }
 
     private static string GeneratePlanFile(DatabaseProvider provider, string query, string rawPlan, Stream incomingData)
