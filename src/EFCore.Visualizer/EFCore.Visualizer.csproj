@@ -18,9 +18,6 @@
 
   <ItemGroup>
     <Content Include="..\IQueryableObjectSource\bin\$(Configuration)\net6\IQueryableObjectSource.dll" Link="netcoreapp\IQueryableObjectSource.dll" />
-    <Content Include="Resources\Common\template.html">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>
