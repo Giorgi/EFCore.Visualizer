@@ -5,6 +5,7 @@ using Microsoft.Web.WebView2.Core;
 using Nerdbank.Streams;
 using System.Buffers;
 using System.Diagnostics;
+using System.Drawing;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -43,6 +44,8 @@ public partial class QueryPlanUserControl : UserControl
             var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(AssemblyLocation, "WVData"));
             await webView.EnsureCoreWebView2Async(environment);
 
+            var color = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
+            webView.CoreWebView2.Profile.PreferredColorScheme = IsBackgroundDarkColor(color) ? CoreWebView2PreferredColorScheme.Dark: CoreWebView2PreferredColorScheme.Light;
 #if !DEBUG
             webView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
             webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
@@ -154,4 +157,6 @@ public partial class QueryPlanUserControl : UserControl
             // Ignore
         }
     }
+
+    private static bool IsBackgroundDarkColor(Color color) => color.R * 0.2126 + color.G * 0.7152 + color.B * 0.0722 < 255 / 2.0;
 }
