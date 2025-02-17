@@ -41,7 +41,7 @@
                 </TextBlock>
             </Button>
         </DockPanel>
-        <wv2:WebView2 Name="webView">
+        <wv2:WebView2 Name="webView" NavigationCompleted="WebViewNavigationCompleted">
         </wv2:WebView2>
     </DockPanel>
 </UserControl>

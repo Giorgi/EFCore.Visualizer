@@ -18,6 +18,8 @@ public partial class QueryPlanUserControl : UserControl
     private static readonly string AssemblyLocation = Path.GetDirectoryName(typeof(QueryPlanUserControl).Assembly.Location);
     private string? filePath;
 
+    private Color backgroundColor = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
+
     public QueryPlanUserControl(VisualizerTarget visualizerTarget)
     {
         this.visualizerTarget = visualizerTarget;
@@ -37,7 +39,6 @@ public partial class QueryPlanUserControl : UserControl
     protected override async void OnInitialized(EventArgs e)
 #pragma warning restore VSTHRD100 // Avoid async void methods
     {
-        var backgroundColor = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
         try
         {
             base.OnInitialized(e);
@@ -45,7 +46,7 @@ public partial class QueryPlanUserControl : UserControl
             var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(AssemblyLocation, "WVData"));
             await webView.EnsureCoreWebView2Async(environment);
 
-            webView.CoreWebView2.Profile.PreferredColorScheme = IsBackgroundDarkColor(backgroundColor) ? CoreWebView2PreferredColorScheme.Dark: CoreWebView2PreferredColorScheme.Light;
+            webView.CoreWebView2.Profile.PreferredColorScheme = IsBackgroundDarkColor(backgroundColor) ? CoreWebView2PreferredColorScheme.Dark : CoreWebView2PreferredColorScheme.Light;
 #if !DEBUG
             webView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
             webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
@@ -73,7 +74,6 @@ public partial class QueryPlanUserControl : UserControl
             if (!string.IsNullOrEmpty(filePath))
             {
                 webView.CoreWebView2.Navigate(filePath);
-                _ = webView.CoreWebView2.ExecuteScriptAsync($"document.querySelector(':root').style.setProperty('--bg-color', 'RGB({backgroundColor.R}, {backgroundColor.G}, {backgroundColor.B})');");
             }
         }
     }
@@ -156,4 +156,9 @@ public partial class QueryPlanUserControl : UserControl
     }
 
     private static bool IsBackgroundDarkColor(Color color) => color.R * 0.2126 + color.G * 0.7152 + color.B * 0.0722 < 255 / 2.0;
+
+    private void WebViewNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
+    {
+        _ = webView.CoreWebView2.ExecuteScriptAsync($"document.querySelector(':root').style.setProperty('--bg-color', 'RGB({backgroundColor.R}, {backgroundColor.G}, {backgroundColor.B})');");
+    }
 }
