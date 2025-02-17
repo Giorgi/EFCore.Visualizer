@@ -26,10 +26,10 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
             switch (operationType)
             {
                 case OperationType.GetQuery:
-                    GetQuery(queryable, incomingData, outgoingData);
+                    GetQuery(queryable, outgoingData);
                     break;
                 case OperationType.GetQueryPlan:
-                    GetQueryPlan(queryable, incomingData, outgoingData);
+                    GetQueryPlan(queryable, outgoingData);
                     break;
                 case OperationType.Unknown:
                 default:
@@ -43,13 +43,13 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
         }
     }
 
-    private static void GetQuery(IQueryable queryable, Stream incomingData, Stream outgoingData)
+    private static void GetQuery(IQueryable queryable, Stream outgoingData)
     {
-        var html = GenerateQueryFile(queryable.ToQueryString(), incomingData);
+        var html = GenerateQueryFile(queryable.ToQueryString());
         outgoingData.WriteSuccess(html);
     }
 
-    private static void GetQueryPlan(IQueryable queryable, Stream incomingData, Stream outgoingData)
+    private static void GetQueryPlan(IQueryable queryable, Stream outgoingData)
     {
         using var command = queryable.CreateDbCommand();
         var provider = GetDatabaseProvider(command);
@@ -65,7 +65,7 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
             var query = queryable.ToQueryString();
             var rawPlan = provider.ExtractPlan();
 
-            var planFile = GeneratePlanFile(provider, query, rawPlan, incomingData);
+            var planFile = GeneratePlanFile(provider, query, rawPlan);
 
             outgoingData.WriteSuccess(planFile);
         }
@@ -75,18 +75,12 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
         }
     }
 
-    private static string GeneratePlanFile(DatabaseProvider provider, string query, string rawPlan, Stream incomingData)
+    private static string GeneratePlanFile(DatabaseProvider provider, string query, string rawPlan)
     {
-        var color = ReadBackgroundColor(incomingData);
-
-        var isBackgroundDarkColor = IsBackgroundDarkColor(color);
-
         var planDirectory = provider.GetPlanDirectory(ResourcesLocation);
         var planFile = Path.Combine(planDirectory, Path.ChangeExtension(Path.GetRandomFileName(), "html"));
 
         var planPageHtml = File.ReadAllText(Path.Combine(planDirectory, "template.html"))
-            .Replace("{backColor}", $"rgb({color.R} {color.G} {color.B})")
-            .Replace("{textColor}", isBackgroundDarkColor ? "white" : "black")
             .Replace("{plan}", provider.Encode(rawPlan))
             .Replace("{query}", provider.Encode(query));
 
@@ -95,12 +89,8 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
         return planFile;
     }
 
-    private static string GenerateQueryFile(string query, Stream incomingData)
+    private static string GenerateQueryFile(string query)
     {
-        var color = ReadBackgroundColor(incomingData);
-
-        var isBackgroundDarkColor = IsBackgroundDarkColor(color);
-
         var templatePath = Path.Combine(ResourcesLocation, "Common", "template.html");
         if (!File.Exists(templatePath))
         {
@@ -112,16 +102,12 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
 
         var templateContent = File.ReadAllText(templatePath);
 
-        var finalHtml = templateContent.Replace("{query}", WebUtility.HtmlEncode(query))
-            .Replace("{backColor}", $"rgb({color.R} {color.G} {color.B})")
-            .Replace("{textColor}", isBackgroundDarkColor ? "white" : "black");
+        var finalHtml = templateContent.Replace("{query}", WebUtility.HtmlEncode(query));
 
         File.WriteAllText(queryFile, finalHtml);
 
         return queryFile;
     }
-
-    private static bool IsBackgroundDarkColor(Color color) => color.R * 0.2126 + color.G * 0.7152 + color.B * 0.0722 < 255 / 2.0;
 
     private static OperationType ReadOperationType(Stream stream)
     {

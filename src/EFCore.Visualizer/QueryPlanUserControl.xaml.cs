@@ -37,6 +37,7 @@ public partial class QueryPlanUserControl : UserControl
     protected override async void OnInitialized(EventArgs e)
 #pragma warning restore VSTHRD100 // Avoid async void methods
     {
+        var backgroundColor = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
         try
         {
             base.OnInitialized(e);
@@ -44,8 +45,7 @@ public partial class QueryPlanUserControl : UserControl
             var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(AssemblyLocation, "WVData"));
             await webView.EnsureCoreWebView2Async(environment);
 
-            var color = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
-            webView.CoreWebView2.Profile.PreferredColorScheme = IsBackgroundDarkColor(color) ? CoreWebView2PreferredColorScheme.Dark: CoreWebView2PreferredColorScheme.Light;
+            webView.CoreWebView2.Profile.PreferredColorScheme = IsBackgroundDarkColor(backgroundColor) ? CoreWebView2PreferredColorScheme.Dark: CoreWebView2PreferredColorScheme.Light;
 #if !DEBUG
             webView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
             webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
@@ -73,15 +73,14 @@ public partial class QueryPlanUserControl : UserControl
             if (!string.IsNullOrEmpty(filePath))
             {
                 webView.CoreWebView2.Navigate(filePath);
+                _ = webView.CoreWebView2.ExecuteScriptAsync($"document.querySelector(':root').style.setProperty('--bg-color', 'RGB({backgroundColor.R}, {backgroundColor.G}, {backgroundColor.B})');");
             }
         }
     }
 
     private async Task<(bool isError, string error, string data)> GetQueryAsync()
     {
-        var color = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
-
-        var message = new ReadOnlySequence<byte>([(byte)OperationType.GetQuery, color.R, color.G, color.B]);
+        var message = new ReadOnlySequence<byte>([(byte)OperationType.GetQuery]);
         var response = await visualizerTarget.ObjectSource.RequestDataAsync(message, CancellationToken.None);
 
         return ReadString(response);
@@ -89,9 +88,7 @@ public partial class QueryPlanUserControl : UserControl
 
     private async Task<(bool isError, string error, string data)> GetQueryPlanAsync()
     {
-        var color = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
-
-        var message = new ReadOnlySequence<byte>([(byte)OperationType.GetQueryPlan, color.R, color.G, color.B]);
+        var message = new ReadOnlySequence<byte>([(byte)OperationType.GetQueryPlan]);
         var response = await visualizerTarget.ObjectSource.RequestDataAsync(message, CancellationToken.None);
 
         return ReadString(response);

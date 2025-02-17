@@ -5,12 +5,24 @@
     <title>SQLite Query Plan</title>
     <link rel="stylesheet" href="treeflex.css">
     <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: black;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: black;
+                --text-color: white;
+            }
+        }
+
         .tf-tree {
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
-            color: {textColor};
-            background-color: {backColor};
+            color: var(--text-color);
+            background: var(--bg-color);
         }
 
         .tf-custom .tf-nc:before,

@@ -7,12 +7,28 @@
     <link type="text/css" media="all" rel="stylesheet" href="qp.css" />
     <script type="text/javascript" src="qp.min.js"></script>
     <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: black;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: black;
+                --text-color: white;
+            }
+        }
+
         .qp-statement-header {
-            color: {textColor};
+            color: var(--text-color);
+        }
+
+        body {
+            background: var(--bg-color);
         }
     </style>
 </head>
-<body style="background-color: {backColor}">
+<body>
     <div id="container">
 
     </div>

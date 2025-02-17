@@ -3,17 +3,29 @@
 <head>
     <title>Query Plan Visualizer</title>
     <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: black;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: black;
+                --text-color: white;
+            }
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
         }
 
         h2, pre {
-            color: {textColor};
+            color: var(--text-color);
         }
 
         .query-box {
-            background-color: {backColor};
+            background: var(--bg-color);
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
