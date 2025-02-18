@@ -2,6 +2,9 @@
 <html>
 <head>
     <title>Query Plan Visualizer</title>
+    <link rel="stylesheet" href="highlight.css">
+    <script type="text/javascript" src="highlight.min.js"></script>
+    <script type="text/javascript" src="highlight.sql.js"></script>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -13,6 +16,28 @@
                 --bg-color: black;
                 --text-color: white;
             }
+
+            .hljs {
+                background: #2d2d2d !important;
+                color: #e2e8f0 !important;
+            }
+
+            .hljs-keyword {
+                color: #ff7b72 !important;
+            }
+
+            .hljs-string {
+                color: #a5d6ff !important;
+            }
+        }
+
+        .hljs-keyword {
+            color: #800;
+            text-transform: uppercase;
+        }
+
+        .hljs-built_in {
+            text-transform: uppercase;
         }
 
         body {
@@ -42,7 +67,10 @@
 <body>
     <h2>SQL Query</h2>
     <div class='query-box'>
-        <pre>{query}</pre>
+        <pre><code class="language-sql">{query}</code></pre>
     </div>
+    <script>
+        hljs.highlightAll();
+    </script>
 </body>
 </html>

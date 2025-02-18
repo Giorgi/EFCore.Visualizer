@@ -5,7 +5,11 @@
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <link type="text/css" media="all" rel="stylesheet" href="qp.css" />
+    <link rel="stylesheet" href="../Common/highlight.css">
+    <!-- Add highlight.js core and SQL language -->
     <script type="text/javascript" src="qp.min.js"></script>
+    <script type="text/javascript" src="../Common/highlight.min.js"></script>
+    <script type="text/javascript" src="../Common/highlight.sql.js"></script>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -17,6 +21,28 @@
                 --bg-color: black;
                 --text-color: white;
             }
+
+            .hljs {
+                background: #2d2d2d !important;
+                color: #e2e8f0 !important;
+            }
+
+            .hljs-keyword {
+                color: #ff7b72 !important;
+            }
+
+            .hljs-string {
+                color: #a5d6ff !important;
+            }
+        }
+
+        .hljs-keyword {
+            color: #800;
+            text-transform: uppercase;
+        }
+
+        .hljs-built_in {
+            text-transform: uppercase;
         }
 
         .qp-statement-header {
@@ -44,6 +70,8 @@
 
         function drawPlan() {
             QP.showPlan(document.getElementById("container"), '{plan}');
+
+            hljs.highlightElement(document.getElementsByClassName('qp-statement-header-row')[0].firstChild);
         }
     </script>
 </body>
