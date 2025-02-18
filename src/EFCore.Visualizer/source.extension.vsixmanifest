@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="EFCore.Visualizer.a059bff0-3edd-4b37-921b-f93d93161013" Version="1.1.10" Language="en-US" Publisher="Giorgi Dalakishvili" />
+    <Identity Id="EFCore.Visualizer.a059bff0-3edd-4b37-921b-f93d93161013" Version="1.2" Language="en-US" Publisher="Giorgi Dalakishvili" />
     <DisplayName>EFCore.Visualizer</DisplayName>
     <Description xml:space="preserve">View Entity Framework Core query plan directly inside Visual Studio.</Description>
     <Preview>false</Preview>
     <MoreInfo>https://github.com/Giorgi/EFCore.Visualizer</MoreInfo>
     <GettingStartedGuide>https://github.com/Giorgi/EFCore.Visualizer/blob/main/README.md#usage</GettingStartedGuide>
     <Icon>Images\IconSmall.png</Icon>
-    <Tags>EFCore, SQL Server, PostgreSQL, SQLite, Oracle, Visualizer, Query Plan</Tags>
+    <Tags>EFCore, SQL Server, PostgreSQL, SQLite, MySQL, Oracle, Visualizer, Query Plan</Tags>
   </Metadata>
   <Installation ExtensionType="VSSDK+VisualStudio.Extensibility">
     <InstallationTarget Version="[17.9, 18.0)" Id="Microsoft.VisualStudio.Community">

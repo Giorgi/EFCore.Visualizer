@@ -11,7 +11,7 @@ View Entity Framework Core query plan directly inside Visual Studio.
 
 ## Introduction
 
-With the Entity Framework Core query plan debugger visualizer, you can view the query plan of your queries directly inside Visual Studio. Currently, the visualizer supports SQL Server, PostgreSQL, SQLite, and Oracle.
+With the Entity Framework Core query plan debugger visualizer, you can view the query plan of your queries directly inside Visual Studio. Currently, the visualizer supports SQL Server, PostgreSQL, SQLite, MySQL and Oracle.
 
 > [!IMPORTANT] 
 > The visualizer requires **Visual Studio Version 17.9.0 ([Released on February 13th](https://devblogs.microsoft.com/visualstudio/visual-studio-2022-17-9-now-available/)) or newer** and supports **EF Core 7 or newer**.
@@ -26,15 +26,21 @@ Click on 'Query Plan Visualizer' and the query plan will be displayed for your q
 
 ### SQL Server:
 
-![Sql Server Plan](doc/SqlPlan1.png)
+![Sql Server Plan](doc/SqlServerDarkMode.png)
 
-![Sql Server Plan](doc/SqlPlan2.png)
+![Sql Server Plan](doc/SqlServerLightMode.png)
 
 ### PostgreSQL:
 
 ![PostgreSQL Plan](doc/PostgreSQLPlan2.png)
 
 ![PostgreSQL Plan](doc/PostgreSQLPlan1.png)
+
+### MySQL:
+
+![MySQL Plan](doc/MySqlLightMode.png)
+
+![MySQL Plan](doc/MySqlDarkMode.png)
 
 ### SQLite:
 
@@ -54,4 +60,5 @@ The query plan includes Actual IO stats, Outline data, Projections, and Predicat
 
 ## Credits
 
-This extension uses [pev2](https://github.com/dalibo/pev2/) and [html-query-plan](https://github.com/JustinPealing/html-query-plan) to display query plans.
+This extension uses [pev2](https://github.com/dalibo/pev2/), [html-query-plan](https://github.com/JustinPealing/html-query-plan) and 
+[Treeflex](https://dumptyd.github.io/treeflex/) to display query plans.
