@@ -3,6 +3,7 @@
 <head>
     <title>Query Plan Visualizer</title>
     <link rel="stylesheet" href="highlight.css">
+    <link rel="stylesheet" media="(prefers-color-scheme: dark)" href="highlight.dark.min.css">
     <script type="text/javascript" src="highlight.min.js"></script>
     <script type="text/javascript" src="highlight.sql.js"></script>
     <style>
@@ -16,19 +17,6 @@
                 --bg-color: black;
                 --text-color: white;
             }
-
-            .hljs {
-                background: #2d2d2d !important;
-                color: #e2e8f0 !important;
-            }
-
-            .hljs-keyword {
-                color: #ff7b72 !important;
-            }
-
-            .hljs-string {
-                color: #a5d6ff !important;
-            }
         }
 
         .hljs-keyword {
@@ -41,6 +29,7 @@
         }
 
         body {
+            background: var(--bg-color);
             font-family: Arial, sans-serif;
             margin: 20px;
         }
