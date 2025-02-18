@@ -2,7 +2,6 @@
 using Microsoft.VisualStudio.DebuggerVisualizers;
 using System;
 using System.Data.Common;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -121,19 +120,6 @@ public class EFCoreQueryableObjectSource : VisualizerObjectSource
         }
         return OperationType.Unknown;
     }
-
-    private static Color ReadBackgroundColor(Stream incomingData)
-    {
-        var buffer = new byte[3];
-
-        if (incomingData.Read(buffer, 0, buffer.Length) == buffer.Length)
-        {
-            return Color.FromArgb(buffer[0], buffer[1], buffer[2]);
-        }
-
-        return Color.White;
-    }
-
 
     private static DatabaseProvider GetDatabaseProvider(DbCommand command)
     {
