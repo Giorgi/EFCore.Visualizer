@@ -1,4 +1,5 @@
-﻿using IQueryableObjectSource;
+﻿using Community.VisualStudio.Toolkit;
+using IQueryableObjectSource;
 using Microsoft.VisualStudio.Extensibility.DebuggerVisualizers;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.Web.WebView2.Core;
@@ -9,16 +10,18 @@ using System.Drawing;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using MessageBox = System.Windows.MessageBox;
 
 namespace EFCore.Visualizer;
 
 public partial class QueryPlanUserControl : UserControl
 {
+    private string? filePath;
     private readonly VisualizerTarget visualizerTarget;
     private static readonly string AssemblyLocation = Path.GetDirectoryName(typeof(QueryPlanUserControl).Assembly.Location);
-    private string? filePath;
 
     private Color backgroundColor = VSColorTheme.GetThemedColor(ThemedDialogColors.WindowPanelBrushKey);
+    private readonly RatingPrompt ratingPrompt = new RatingPrompt("GiorgiDalakishvili.EFCoreVisualizer", "EFCore Visualizer", General.Instance, requestsBeforePrompt: 3);
 
     public QueryPlanUserControl(VisualizerTarget visualizerTarget)
     {
@@ -33,6 +36,7 @@ public partial class QueryPlanUserControl : UserControl
         SafeDeleteFile(filePath);
 
         Unloaded -= QueryPlanUserControlUnloaded;
+        _ = ratingPrompt.PromptAsync();
     }
 
 #pragma warning disable VSTHRD100 // Avoid async void methods
@@ -74,6 +78,8 @@ public partial class QueryPlanUserControl : UserControl
             if (!string.IsNullOrEmpty(filePath))
             {
                 webView.CoreWebView2.Navigate(filePath);
+
+                ratingPrompt.RegisterSuccessfulUsage();
             }
         }
     }
