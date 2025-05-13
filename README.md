@@ -16,6 +16,10 @@ With the Entity Framework Core query plan debugger visualizer, you can view the 
 > [!IMPORTANT] 
 > The visualizer requires **Visual Studio Version 17.9.0 ([Released on February 13th](https://devblogs.microsoft.com/visualstudio/visual-studio-2022-17-9-now-available/)) or newer** and supports **EF Core 7 or newer**.
 
+### Visual Studio Toolbox - EFCore.Visualizer Extension for Visual Studio
+
+[![Visual Studio Toolbox - EFCore.Visualizer Extension for Visual Studio](https://img.youtube.com/vi/0z5320LK9LI/0.jpg)](https://www.youtube.com/watch?v=0z5320LK9LI)
+
 ## Usage
 
 After installing the [extension from the marketplace](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer), a new debugger visualizer will be added to Visual Studio. When debugging, hover over your queries and there will be an option to view the query plan (Here we show the actual query plan which means it forces query execution ):
