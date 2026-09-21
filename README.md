@@ -4,10 +4,10 @@
 
 View Entity Framework Core query plan directly inside Visual Studio.
 
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/GiorgiDalakishvili.EFCoreVisualizer?style=for-the-badge&logo=visualstudio&label=Download%20Now&color=purple)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
-[![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/GiorgiDalakishvili.EFCoreVisualizer?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
-[![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/GiorgiDalakishvili.EFCoreVisualizer?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
-[![Visual Studio Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/GiorgiDalakishvili.EFCoreVisualizer?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer&ssr=false#review-details)
+[![Visual Studio Marketplace Version](https://badgen.net/vs-marketplace/v/GiorgiDalakishvili.EFCoreVisualizer?label=Download%20Now&color=purple)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
+[![Visual Studio Marketplace Downloads](https://badgen.net/vs-marketplace/d/GiorgiDalakishvili.EFCoreVisualizer)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
+[![Visual Studio Marketplace Installs](https://badgen.net/vs-marketplace/i/GiorgiDalakishvili.EFCoreVisualizer)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
+[![Visual Studio Marketplace Rating](https://badgen.net/vs-marketplace/rating/GiorgiDalakishvili.EFCoreVisualizer)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer&ssr=false#review-details)
 
 
 ## Introduction
