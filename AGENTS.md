@@ -26,9 +26,9 @@ The code is split across two processes:
   - `EFCoreQueryableDebuggerVisualizerProvider` registers the visualizer for `EntityQueryable<T>` and `IncludableQueryable<T,P>`. It names the debuggee-side object source by its assembly-qualified string name. The menu label ("Query Plan Visualizer") comes from `.vsextension/string-resources.json`.
   - `QueryPlanUserControl` is a WPF control that hosts WebView2. It sends two requests to the object source, `GetQuery` and then `GetQueryPlan`. Each reply is a path to a generated HTML file, which the control opens in WebView2. If the plan request fails, the control shows the error and displays the query-only page instead. It also passes the VS theme to the page: it sets `PreferredColorScheme` and injects the `--bg-color` CSS variable after navigation.
 - **`src/IQueryableObjectSource`** (net6, loaded into the *debuggee* process). It is installed into the VSIX under `netcoreapp\`.
-  - `EFCoreQueryableObjectSource.TransferData` reads a 1-byte `OperationType` request and writes the reply with `StreamExtensions`: a `bool isError` followed by a `string`, written with `BinaryWriter` and `Encoding.Default`. `QueryPlanUserControl.ReadString` reads the reply in the same format. If you change one side, change the other side too.
+  - `EFCoreQueryableObjectSource.TransferData` is a thin adapter over `QueryPlanHelper`, which holds the debugger-agnostic logic. It reads a 1-byte `OperationType` request and writes the reply with `StreamExtensions`: a `bool isError` followed by a `string`, written with `BinaryWriter` and `Encoding.Default`. `QueryPlanUserControl.ReadString` reads the reply in the same format. If you change one side, change the other side too.
   - `OperationType.cs` is linked into the VS project (`<Compile Include=... Link=...>`), so both sides use the same enum.
-  - `GetDatabaseProvider` selects a `DatabaseProvider` subclass by the `DbCommand` type's full name, given as a **string**. The project references only `Microsoft.EntityFrameworkCore.Relational` 7.0.0 and no provider packages, so provider code may use only `System.Data.Common` APIs.
+  - `QueryPlanHelper.GetDatabaseProvider` selects a `DatabaseProvider` subclass by the `DbCommand` type's full name, given as a **string**. The project references only `Microsoft.EntityFrameworkCore.Relational` 7.0.0 and no provider packages, so provider code may use only `System.Data.Common` APIs.
   - Each provider runs its own plan query against the app's own connection and transaction. SQL Server, Postgres and Oracle **execute the query** to get an actual plan; SQLite does not:
     - SQL Server: `SET STATISTICS XML ON`
     - Postgres: `EXPLAIN (ANALYZE, COSTS, VERBOSE, BUFFERS)`
@@ -37,12 +37,13 @@ The code is split across two processes:
 
     Providers that change session settings put them back in a `finally` block. The VS debugger stops an evaluation after about 5 seconds, so a slow plan query fails with a timeout. The README lists this as a known issue.
   - The plan is placed into `Resources/<Provider>/template.html`, which replaces the `{plan}` and `{query}` placeholders. The result is written as a random `.html` file next to the template, and the VS side deletes that file when the control unloads. `GetPlanDirectory` returns the folder name, and `Encode` sets the escaping. The default escaping is JS string escaping. SQLite overrides it, because it creates the HTML tree itself.
-  - The object source locates `Resources` relative to its own DLL: two directory levels up from the DLL, then `Resources`.
+  - `QueryPlanHelper` locates `Resources` relative to its own DLL: two directory levels up from the DLL, then `Resources`.
+- **`src/EFCore.Visualizer.DebuggeeHelper`** (net6) compiles the same sources from `IQueryableObjectSource`, except the VS-specific `EFCoreQueryableObjectSource`, `StreamExtensions` and `OperationType`. It has no Visual Studio dependency, so other debuggers can load it with `Assembly.LoadFrom` and call `QueryPlanHelper.GetPlanFile` / `GetQueryFile` through expression evaluation. Keep the shared sources in `IQueryableObjectSource` and free of Visual Studio types.
 
 ### Adding a database provider
 
 1. Add a `DatabaseProvider` subclass in `IQueryableObjectSource`.
-2. Add its command type name to the `GetDatabaseProvider` switch.
+2. Add its command type name to the `QueryPlanHelper.GetDatabaseProvider` switch.
 3. Add a `Resources/<Name>/template.html`, plus any JS/CSS it needs. Shared assets are in `Resources/Common`.
 4. In `EFCore.Visualizer.csproj`, add a `<Content Include="Resources\<Name>\*.*"><IncludeInVSIX>true</IncludeInVSIX></Content>` entry, and a `<None Remove>` entry for the template. Without these, the files do not ship.
 

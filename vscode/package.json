@@ -1,0 +1,43 @@
+{
+  "name": "efcore-visualizer",
+  "displayName": "EFCore Visualizer",
+  "description": "View Entity Framework Core query plans while debugging",
+  "version": "0.0.1",
+  "publisher": "GiorgiDalakishvili",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Giorgi/EFCore.Visualizer"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Debuggers",
+    "Visualization"
+  ],
+  "extensionDependencies": [
+    "ms-dotnettools.csharp"
+  ],
+  "activationEvents": [
+    "onDebugResolve:coreclr"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {},
+  "scripts": {
+    "compile": "tsc -p ./",
+    "build:helper": "node scripts/build-helper.js",
+    "build:fixture": "dotnet build test-fixtures/SampleApp -c Debug",
+    "pretest": "npm run compile && npm run build:helper && npm run build:fixture",
+    "test": "node out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/mocha": "10.0.10",
+    "@types/node": "22.20.5",
+    "@types/vscode": "1.90.0",
+    "@vscode/test-electron": "3.1.0",
+    "mocha": "11.8.0",
+    "typescript": "5.9.3"
+  }
+}

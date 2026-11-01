@@ -3,5 +3,6 @@
     <BuildDependency Project="IQueryableObjectSource/IQueryableObjectSource.csproj" />
     <Deploy Solution="Debug|*" />
   </Project>
+  <Project Path="EFCore.Visualizer.DebuggeeHelper/EFCore.Visualizer.DebuggeeHelper.csproj" />
   <Project Path="IQueryableObjectSource/IQueryableObjectSource.csproj" />
 </Solution>

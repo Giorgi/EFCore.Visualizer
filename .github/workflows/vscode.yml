@@ -1,0 +1,25 @@
+name: VS Code extension
+
+on:
+  push:
+    paths: [ 'vscode/**', 'src/EFCore.Visualizer.DebuggeeHelper/**', 'src/IQueryableObjectSource/**', 'src/EFCore.Visualizer/Resources/**', '.github/workflows/vscode.yml' ]
+  pull_request:
+    paths: [ 'vscode/**', 'src/EFCore.Visualizer.DebuggeeHelper/**', 'src/IQueryableObjectSource/**', 'src/EFCore.Visualizer/Resources/**', '.github/workflows/vscode.yml' ]
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vscode
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run pretest
+      - run: xvfb-run -a npm run test --ignore-scripts
