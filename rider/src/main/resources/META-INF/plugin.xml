@@ -1,0 +1,7 @@
+<idea-plugin>
+  <id>efcore.visualizer</id>
+  <name>EFCore Visualizer</name>
+  <vendor url="https://github.com/Giorgi/EFCore.Visualizer">Giorgi Dalakishvili</vendor>
+  <description>View Entity Framework Core query plans while debugging.</description>
+  <depends>com.intellij.modules.rider</depends>
+</idea-plugin>
