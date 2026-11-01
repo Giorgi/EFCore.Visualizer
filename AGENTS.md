@@ -15,7 +15,7 @@ nuget restore src/EFCore.Visualizer.sln
 msbuild src/EFCore.Visualizer.sln /t:Rebuild
 ```
 
-CI runs the same build. `.github/workflows/build.yml` builds the VSIX in Release on every push and pull request to `main`, and uploads it as the `EFCore.Visualizer-vsix` artifact. `.github/workflows/codeql-analysis.yml` builds the solution for CodeQL. To debug, run `EFCore.Visualizer` from Visual Studio (it starts the Experimental Instance), then debug any app that uses EF Core.
+CI runs the same build. `.github/workflows/build.yml` builds the VSIX in Release on every push and pull request to `main`, and uploads `EFCore.Visualizer.vsix` as an unzipped artifact. `.github/workflows/codeql-analysis.yml` builds the solution for CodeQL. To debug, run `EFCore.Visualizer` from Visual Studio (it starts the Experimental Instance), then debug any app that uses EF Core.
 
 **Build order:** the solution has no project reference between the two projects. `EFCore.Visualizer.csproj` packs `..\IQueryableObjectSource\bin\$(Configuration)\net6\IQueryableObjectSource.dll` into the VSIX as a `Content` file. Build `IQueryableObjectSource` first, in the same configuration, or the VSIX will be missing that DLL or will contain an old copy.
 

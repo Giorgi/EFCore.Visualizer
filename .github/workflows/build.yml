@@ -18,10 +18,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
 
     # The VSIX project packs IQueryableObjectSource.dll from that project's bin folder,
     # but the solution has no project reference between them, so build it first.
@@ -32,8 +32,9 @@ jobs:
       run: msbuild src\EFCore.Visualizer.sln -restore -p:Configuration=$env:Configuration -v:m
 
     - name: Upload VSIX
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
-        name: EFCore.Visualizer-vsix
+        # Upload the .vsix as-is instead of zipped. The artifact is named after the file.
+        archive: false
         path: src\EFCore.Visualizer\bin\${{ env.Configuration }}\net48\EFCore.Visualizer.vsix
         if-no-files-found: error
