@@ -10,11 +10,21 @@ debuggee through plain DAP `evaluate` requests against the C# extension's `corec
 dependency. It compiles the sources in `../src/IQueryableObjectSource`, except the VS-only object source,
 which is a thin adapter over `QueryPlanHelper`.
 
+## Usage
+
+While a .NET (`coreclr`) session is paused, right-click an `IQueryable` in **Variables** or **Watch** and
+choose **Visualize Query Plan** (or run *EFCore Visualizer: Visualize Query Plan* from the Command Palette
+and type an expression). The plan opens in a webview beside the editor. If the plan can't be produced,
+the error is shown and the SQL is displayed instead, as in Visual Studio.
+
 ## Integration test
 
 `src/test/suite/debuggee.test.ts` runs in a real VS Code (`@vscode/test-electron`) with
 `ms-dotnettools.csharp` installed, debugs `test-fixtures/SampleApp` (EF Core 8 + SQLite), stops at the
-`// BREAKPOINT` line and performs the two evaluations above (plus `GetQueryFile` and an error case).
+`// BREAKPOINT` line and:
+
+* performs the two evaluations above (plus `GetQueryFile` and a func-eval exception case);
+* invokes the command with the same argument the Variables context menu passes and checks the webview HTML.
 
 Requires the .NET 8 SDK on `PATH`.
 
@@ -23,3 +33,12 @@ npm ci
 npm run pretest            # tsc + build helper into dist/ + build the sample app
 npm test                   # Linux without a display: xvfb-run -a npm test --ignore-scripts
 ```
+
+## Known gaps (spike)
+
+* Pages are generated inside the extension's `dist/Resources` folder, which assumes the debuggee and the
+  extension host share a file system (true locally and for Remote-SSH/containers where the C# extension
+  runs remotely; not for e.g. `pipeTransport` remote debugging).
+* Tested only with SQLite on Linux. SQL Server/Postgres/Oracle templates are wired up but unverified in
+  webviews; no Content-Security-Policy is set yet.
+* No packaging (`vsce`) or Marketplace metadata yet.

@@ -20,11 +20,40 @@
   "extensionDependencies": [
     "ms-dotnettools.csharp"
   ],
-  "activationEvents": [
-    "onDebugResolve:coreclr"
-  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
-  "contributes": {},
+  "contributes": {
+    "commands": [
+      {
+        "command": "efcoreVisualizer.visualizeQuery",
+        "title": "Visualize Query Plan",
+        "category": "EFCore Visualizer",
+        "enablement": "inDebugMode && debugState == 'stopped'"
+      }
+    ],
+    "menus": {
+      "debug/variables/context": [
+        {
+          "command": "efcoreVisualizer.visualizeQuery",
+          "when": "debugType == 'coreclr' && variableEvaluateNamePresent",
+          "group": "z_efcore@1"
+        }
+      ],
+      "debug/watch/context": [
+        {
+          "command": "efcoreVisualizer.visualizeQuery",
+          "when": "debugType == 'coreclr' && variableEvaluateNamePresent",
+          "group": "z_efcore@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "efcoreVisualizer.visualizeQuery",
+          "when": "debugType == 'coreclr'"
+        }
+      ]
+    }
+  },
   "scripts": {
     "compile": "tsc -p ./",
     "build:helper": "node scripts/build-helper.js",
