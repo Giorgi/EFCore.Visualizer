@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
@@ -57,10 +58,17 @@ val buildHelper by tasks.registering(Exec::class) {
     }
 }
 
-tasks.withType<Test>().configureEach {
+// Ship the helper inside the plugin, mirroring the VSIX: <plugin>/netcoreapp/*.dll and <plugin>/Resources/**
+tasks.withType<PrepareSandboxTask>().configureEach {
     dependsOn(buildHelper)
+    from(helperRoot) {
+        include("netcoreapp/**", "Resources/**")
+        into(intellijPlatform.projectName.map { it })
+    }
+}
+
+tasks.withType<Test>().configureEach {
     useTestNG()
-    systemProperty("efcore.visualizer.helper", helperRoot.get().file("netcoreapp/EFCore.Visualizer.DebuggeeHelper.dll").asFile.path)
     systemProperty("intellij.build.test.ignoreFirstAndLastTests", "true")
     testLogging {
         showStandardStreams = true

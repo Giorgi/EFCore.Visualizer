@@ -15,7 +15,11 @@ import com.jetbrains.rider.test.scriptingApi.toggleBreakpoint
 import com.jetbrains.rider.test.scriptingApi.waitForPause
 import org.testng.annotations.AfterMethod
 import org.testng.annotations.Test
+import com.intellij.testFramework.PlatformTestUtil
 import java.io.File
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.readText
+import kotlin.test.assertEquals
 import java.time.Duration
 import kotlin.test.assertContains
 import kotlin.test.assertTrue
@@ -31,7 +35,8 @@ import kotlin.test.assertTrue
 class DebuggeeHelperTest : DebuggerTestBase() {
     override val projectName = "SampleApp"
 
-    private val helperDll = File(System.getProperty("efcore.visualizer.helper")).absolutePath
+    // Resolved from the installed plugin (<plugin>/netcoreapp), i.e. the packaged layout is under test too.
+    private val helperDll by lazy { QueryPlanVisualizer.helperPath().toString() }
     private val timeout = Duration.ofSeconds(60)
 
     @Test
@@ -72,6 +77,19 @@ class DebuggeeHelperTest : DebuggerTestBase() {
 
             queryPath.delete()
             planPath.delete()
+
+            // The plugin's own path: XDebuggerEvaluator + presentation rendering, as used by the menu action.
+            val result = PlatformTestUtil.waitForFuture(QueryPlanVisualizer.visualize(session, "query"), 60_000)
+            println("QueryPlanVisualizer.visualize(query) => $result")
+            assertEquals(VisualizeResult.Kind.PLAN, result.kind)
+            assertContains(result.file.readText(), Regex("SEARCH \\w+ USING INDEX IX_Blogs_Rating"))
+            result.file.deleteIfExists()
+
+            val error = runCatching { PlatformTestUtil.waitForFuture(DebuggeeEvaluator.getPlanFile(session, "context"), 60_000) }
+                // waitForFuture wraps failures (AssertionError -> ExecutionException -> cause).
+                .exceptionOrNull()?.let { e -> generateSequence(e) { it.cause }.firstOrNull { it is EvaluationException } ?: e }
+            println("DebuggeeEvaluator.getPlanFile(context) => $error")
+            assertTrue(error is EvaluationException && "System.ArgumentException" in error.message.orEmpty(), "unexpected: $error")
 
             resumeSession()
         }, true)

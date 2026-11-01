@@ -4,4 +4,17 @@
   <vendor url="https://github.com/Giorgi/EFCore.Visualizer">Giorgi Dalakishvili</vendor>
   <description>View Entity Framework Core query plans while debugging.</description>
   <depends>com.intellij.modules.rider</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <notificationGroup id="EFCore Visualizer" displayType="BALLOON"/>
+  </extensions>
+
+  <actions>
+    <action id="EFCoreVisualizer.VisualizeQueryPlan"
+            class="efcore.visualizer.VisualizeQueryPlanAction"
+            text="Visualize Query Plan"
+            description="Show the execution plan of the selected EF Core IQueryable">
+      <add-to-group group-id="XDebugger.ValueGroup" anchor="last"/>
+    </action>
+  </actions>
 </idea-plugin>
