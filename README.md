@@ -9,6 +9,9 @@ View Entity Framework Core query plan directly inside Visual Studio.
 [![Visual Studio Marketplace Installs](https://badgen.net/vs-marketplace/i/GiorgiDalakishvili.EFCoreVisualizer)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
 [![Visual Studio Marketplace Rating](https://badgen.net/vs-marketplace/rating/GiorgiDalakishvili.EFCoreVisualizer)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer&ssr=false#review-details)
 
+<a href="https://trendshift.io/repositories/7586?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-7586" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/7586/daily?language=C%23" alt="Giorgi/EFCore.Visualizer | Trendshift" width="250" height="55"/></a>
+<a href="https://trendshift.io/repositories/7586?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-7586" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/7586/weekly?language=C%23" alt="Giorgi/EFCore.Visualizer | Trendshift" width="250" height="55"/></a>
+<a href="https://trendshift.io/repositories/7586?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-7586" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/7586/monthly?language=C%23" alt="Giorgi/EFCore.Visualizer | Trendshift" width="250" height="55"/></a>
 
 ## Introduction
 
