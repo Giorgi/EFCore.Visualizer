@@ -69,7 +69,12 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
 
     const csharp = vscode.extensions.getExtension('ms-dotnettools.csharp');
     assert.ok(csharp, 'C# extension (ms-dotnettools.csharp) is not installed');
-    await csharp.activate();
+    // activate() returns before the C# extension has registered the `coreclr` debug adapter: on a fresh
+    // install it first finishes setting up the debugger in the background. Only initializationFinished()
+    // waits for that (and for the language server), so startDebugging right after activate() can fail with
+    // "Couldn't find a debug adapter descriptor for debug type 'coreclr'".
+    const api = await csharp.activate();
+    await api?.initializationFinished?.();
 
     const lines = fs.readFileSync(programCs, 'utf-8').split(/\r?\n/);
     breakpointLine = lines.findIndex((l) => l.includes('// BREAKPOINT'));
