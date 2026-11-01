@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build VSIX
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      Configuration: Release
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    # The VSIX project packs IQueryableObjectSource.dll from that project's bin folder,
+    # but the solution has no project reference between them, so build it first.
+    - name: Build IQueryableObjectSource
+      run: msbuild src\IQueryableObjectSource\IQueryableObjectSource.csproj -restore -p:Configuration=$env:Configuration -v:m
+
+    - name: Build extension
+      run: msbuild src\EFCore.Visualizer.sln -restore -p:Configuration=$env:Configuration -v:m
+
+    - name: Upload VSIX
+      uses: actions/upload-artifact@v4
+      with:
+        name: EFCore.Visualizer-vsix
+        path: src\EFCore.Visualizer\bin\${{ env.Configuration }}\net48\EFCore.Visualizer.vsix
+        if-no-files-found: error
