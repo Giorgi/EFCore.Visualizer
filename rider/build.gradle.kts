@@ -23,17 +23,25 @@ kotlin {
 }
 
 // Rider's test framework API differs between versions: shared test logic lives in src/test/kotlin, the
-// version-specific bits (test annotations, a few helpers) in src/test/kotlin-<251|262>.
-val riderMajor = providers.gradleProperty("riderVersion").get().substringBefore('.').toInt()
-sourceSets["test"].kotlin.srcDir(if (riderMajor >= 2026) "src/test/kotlin-262" else "src/test/kotlin-251")
+// version-specific bits (test annotations, a few helpers) in src/test/kotlin-<251|253|262>:
+//   251: 2025.1-2025.2 (@TestEnvironment, File test-data marker)   253: 2025.3 (@TestSettings, File marker)
+//   262: 2026.x (@TestSettings, Path marker, getSessionTabIfInitialized)
+val riderVersionParts = providers.gradleProperty("riderVersion").get().split('.').map { it.toInt() }
+val riderMajor = riderVersionParts[0]
+val testCompatDir = when {
+    riderMajor >= 2026 -> "262"
+    riderVersionParts.getOrElse(1) { 0 } >= 3 -> "253"
+    else -> "251"
+}
+sourceSets["test"].kotlin.srcDir("src/test/kotlin-$testCompatDir")
 
 dependencies {
     intellijPlatform {
         rider(providers.gradleProperty("riderVersion")) { useInstaller = false }
         jetbrainsRuntime()
-        // Embedded browser (JCEF) APIs, used by the plan-tab rendering test: separate modules in 2026.2, part of the
-        // core platform jars in 2025.1 (2026.1 not checked).
-        if (riderMajor >= 2026) {
+        // Embedded browser (JCEF) APIs, used by the plan-tab rendering test: separate modules from 2026.2; part of the
+        // core platform jars up to 2026.1.
+        if (riderMajor > 2026 || (riderMajor == 2026 && riderVersionParts.getOrElse(1) { 0 } >= 2)) {
             bundledModule("intellij.platform.ui.jcef")
             bundledModule("intellij.libraries.jcef")
         }

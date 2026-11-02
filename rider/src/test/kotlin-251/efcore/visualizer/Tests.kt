@@ -6,7 +6,7 @@ import com.jetbrains.rider.test.annotations.TestEnvironment
 import com.jetbrains.rider.test.env.enums.BuildTool
 import com.jetbrains.rider.test.env.enums.SdkVersion
 
-// Rider 2025.x test framework: toolset is configured with @TestEnvironment. Use the .NET SDK found on PATH.
+// Rider 2025.1 - 2025.2 test framework: toolset is configured with @TestEnvironment. Use the .NET SDK found on PATH.
 
 @TestEnvironment(sdkVersion = SdkVersion.AUTODETECT, buildTool = BuildTool.AUTODETECT)
 @Solution("SampleApp")

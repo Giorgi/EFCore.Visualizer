@@ -7,7 +7,7 @@ import com.jetbrains.rider.test.enums.BuildTool
 import com.jetbrains.rider.test.enums.Mono
 import com.jetbrains.rider.test.enums.sdk.SdkVersion
 
-// Rider 2026.x test framework: toolset is configured with @TestSettings. Use the .NET SDK found on PATH.
+// Rider 2025.3+ test framework: toolset is configured with @TestSettings. Use the .NET SDK found on PATH.
 
 @TestSettings(sdkVersion = SdkVersion.AUTODETECT, buildTool = BuildTool.AUTODETECT, mono = Mono.NONE)
 @Solution("SampleApp")
