@@ -2,14 +2,15 @@ package efcore.visualizer
 
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
-import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.impl.HTMLEditorProvider
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import java.nio.file.Files
 
-/** Shows results and messages. An application service so tests can replace it (no browser in headless tests). */
-@Service(Service.Level.APP)
+/**
+ * Shows results and messages. A regular application service registered in plugin.xml (light @Service classes
+ * must be final), so tests can replace it.
+ */
 open class QueryPlanPresenter {
     open fun show(project: Project, result: VisualizeResult, expression: String) {
         result.warning?.let { notify(project, it, NotificationType.WARNING) }

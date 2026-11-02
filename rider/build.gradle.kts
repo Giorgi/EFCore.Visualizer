@@ -26,6 +26,9 @@ dependencies {
     intellijPlatform {
         rider(providers.gradleProperty("riderVersion")) { useInstaller = false }
         jetbrainsRuntime()
+        // Embedded browser (JCEF) APIs, used by the plan-tab rendering test.
+        bundledModule("intellij.platform.ui.jcef")
+        bundledModule("intellij.libraries.jcef")
         // Rider's test framework (solution/debugger scripting API) ships inside the SDK.
         bundledLibrary(provider { project.intellijPlatform.platformPath.resolve("lib/testFramework.jar").toString() })
     }
@@ -77,6 +80,10 @@ tasks.withType<PrepareSandboxTask>().configureEach {
 
 tasks.withType<Test>().configureEach {
     useTestNG()
+    // Let JCEF (embedded browser) start inside tests, off-screen, so the plan tab can be rendered and checked.
+    systemProperty("ide.browser.jcef.testMode.enabled", "true")
+    systemProperty("ide.browser.jcef.headless.enabled", "true")
+    systemProperty("ide.browser.jcef.sandbox.enable", "false")
     systemProperty("intellij.build.test.ignoreFirstAndLastTests", "true")
     testLogging {
         showStandardStreams = true
