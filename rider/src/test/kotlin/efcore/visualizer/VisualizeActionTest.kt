@@ -63,6 +63,10 @@ class VisualizeActionTest : DebuggerTestBase() {
         val programCs = activeSolutionDirectory.resolve("SampleApp/Program.cs").toFile()
         val line = programCs.readLines().indexOfFirst { "// BREAKPOINT" in it } + 1
 
+        // The visualizer relies on method calls in watches; Rider's own default allows them (the test framework
+        // switches them off for its tests, hence enableTargetInvokeWithWatches below).
+        assertTrue(DotNetDebuggerSettings().allowImplicitTargetInvoke, "Rider's default disallows method calls in watches")
+
         testDebugProgram({
             DotNetDebuggerSettings.instance.enableTargetInvokeWithWatches()
             toggleBreakpoint(project, "SampleApp/Program.cs", line)

@@ -96,7 +96,6 @@ object DebuggeeEvaluator {
             fullValueRequested = true
             fullValueEvaluator.startEvaluation(object : XFullValueEvaluator.XFullValueEvaluationCallback {
                 override fun evaluated(fullValue: String) = complete(type, fullValue, isString = true, isError = false)
-                override fun evaluated(fullValue: String, font: java.awt.Font?) = evaluated(fullValue)
                 override fun errorOccurred(errorMessage: String) {
                     future.completeExceptionally(EvaluationException(errorMessage, expression))
                 }

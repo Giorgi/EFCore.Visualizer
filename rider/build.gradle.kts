@@ -38,6 +38,13 @@ intellijPlatform {
     pluginConfiguration {
         name = "EFCore Visualizer"
     }
+    pluginVerification {
+        ides {
+            create(org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.Rider, providers.gradleProperty("riderVersion").get()) {
+                useInstaller = false
+            }
+        }
+    }
     buildSearchableOptions = false
 }
 
@@ -46,12 +53,13 @@ val helperRoot = layout.buildDirectory.dir("helper")
 val buildHelper by tasks.registering(Exec::class) {
     val project = rootDir.resolve("../src/EFCore.Visualizer.DebuggeeHelper/EFCore.Visualizer.DebuggeeHelper.csproj")
     commandLine("dotnet", "build", project.path, "-c", "Release", "-o", helperRoot.get().dir("build").asFile.path)
+    // sync (not copy) so pages generated into these folders by earlier runs never end up in the plugin zip.
     doLast {
-        copy {
+        sync {
             from(helperRoot.get().dir("build")) { include("EFCore.Visualizer.DebuggeeHelper.dll", "EFCore.Visualizer.DebuggeeHelper.pdb") }
             into(helperRoot.get().dir("netcoreapp"))
         }
-        copy {
+        sync {
             from(rootDir.resolve("../src/EFCore.Visualizer/Resources"))
             into(helperRoot.get().dir("Resources"))
         }

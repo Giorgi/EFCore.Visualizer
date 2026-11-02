@@ -1,7 +1,6 @@
 package efcore.visualizer
 
-import com.intellij.ide.plugins.PluginManagerCore
-import com.intellij.openapi.extensions.PluginId
+import com.intellij.openapi.application.PathManager
 import com.intellij.xdebugger.XDebugSession
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
@@ -18,8 +17,9 @@ object QueryPlanVisualizer {
     /** <plugin>/netcoreapp/EFCore.Visualizer.DebuggeeHelper.dll; templates live in <plugin>/Resources. */
     fun helperPath(): Path {
         System.getProperty(HELPER_PROPERTY)?.let { return Path.of(it) }
-        val plugin = PluginManagerCore.getPlugin(PluginId.getId(PLUGIN_ID)) ?: error("Plugin $PLUGIN_ID is not loaded")
-        return plugin.pluginPath.resolve("netcoreapp/EFCore.Visualizer.DebuggeeHelper.dll")
+        // <plugin>/lib/<our jar>  ->  <plugin>   (the plugin-descriptor lookups are internal API in 2026.2)
+        val jar = PathManager.getJarPathForClass(QueryPlanVisualizer::class.java) ?: error("Cannot locate the $PLUGIN_ID plugin")
+        return Path.of(jar).parent.parent.resolve("netcoreapp/EFCore.Visualizer.DebuggeeHelper.dll")
     }
 
     /**
