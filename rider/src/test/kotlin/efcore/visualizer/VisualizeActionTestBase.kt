@@ -10,26 +10,16 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.TestActionEvent
-import com.intellij.xdebugger.impl.XDebugSessionImpl
 import com.intellij.xdebugger.impl.ui.tree.XDebuggerTree
 import com.intellij.xdebugger.impl.ui.tree.actions.XDebuggerTreeActionBase
-import com.intellij.xdebugger.impl.ui.tree.nodes.XStackFrameNode
 import com.intellij.xdebugger.impl.ui.tree.nodes.XValueContainerNode
 import com.intellij.xdebugger.impl.ui.tree.nodes.XValueNodeImpl
 import com.jetbrains.rider.debugger.settings.DotNetDebuggerSettings
-import com.jetbrains.rider.test.annotations.Solution
-import com.jetbrains.rider.test.annotations.TestSettings
 import com.jetbrains.rider.test.base.DebuggerTestBase
-import com.jetbrains.rider.test.debugger.disableTargetInvokeWithWatches
-import com.jetbrains.rider.test.debugger.enableTargetInvokeWithWatches
-import com.jetbrains.rider.test.enums.BuildTool
-import com.jetbrains.rider.test.enums.Mono
-import com.jetbrains.rider.test.enums.sdk.SdkVersion
 import com.jetbrains.rider.test.scriptingApi.resumeSession
 import com.jetbrains.rider.test.scriptingApi.toggleBreakpoint
 import com.jetbrains.rider.test.scriptingApi.waitForPause
 import org.testng.annotations.AfterMethod
-import org.testng.annotations.Test
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.readText
@@ -43,9 +33,7 @@ import kotlin.test.assertTrue
  * Drives VisualizeQueryPlanAction exactly as the Variables context menu would: registered in XDebugger.ValueGroup,
  * update() on a selected "query" node, then actionPerformed(). Only the presenter (browser tab) is replaced.
  */
-@TestSettings(sdkVersion = SdkVersion.AUTODETECT, buildTool = BuildTool.AUTODETECT, mono = Mono.NONE)
-@Solution("SampleApp")
-class VisualizeActionTest : DebuggerTestBase() {
+abstract class VisualizeActionTestBase : DebuggerTestBase() {
     override val projectName = "SampleApp"
 
     private class RecordingPresenter : QueryPlanPresenter() {
@@ -58,17 +46,17 @@ class VisualizeActionTest : DebuggerTestBase() {
         }
     }
 
-    @Test
-    fun variablesContextMenuActionShowsPlanForSelectedQuery() {
-        val programCs = activeSolutionDirectory.resolve("SampleApp/Program.cs").toFile()
+    // Called from the version-specific @Test in VisualizeActionTest (Rider reads test annotations from the declaring class).
+    protected fun runVariablesContextMenuActionShowsPlanForSelectedQuery() {
+        val programCs = SampleApp.programCs
         val line = programCs.readLines().indexOfFirst { "// BREAKPOINT" in it } + 1
 
         // The visualizer relies on method calls in watches; Rider's own default allows them (the test framework
-        // switches them off for its tests, hence enableTargetInvokeWithWatches below).
+        // switches them off for its tests, hence RiderCompat.enableMethodCalls below).
         assertTrue(DotNetDebuggerSettings().allowImplicitTargetInvoke, "Rider's default disallows method calls in watches")
 
         testDebugProgram({
-            DotNetDebuggerSettings.instance.enableTargetInvokeWithWatches()
+            RiderCompat.enableMethodCalls()
             toggleBreakpoint(project, "SampleApp/Program.cs", line)
         }, {
             waitForPause()
@@ -82,12 +70,8 @@ class VisualizeActionTest : DebuggerTestBase() {
                 "action is not in XDebugger.ValueGroup",
             )
 
-            // 2. A real debugger tree: the session's Variables view if the test framework created one.
-            val realTree = (session as? XDebugSessionImpl)?.sessionTabIfInitialized?.variablesView?.tree
-            val tree = realTree ?: XDebuggerTree(project, session.debugProcess.editorsProvider, null, "XDebugger.ValueGroup", null).also {
-                it.setRoot(XStackFrameNode(it, session.currentStackFrame!!, null), false)
-            }
-            println("Variables tree: ${if (realTree != null) "session Variables view" else "XDebuggerTree over current frame"}")
+            // 2. The session's real Variables view.
+            val tree = assertNotNull(RiderCompat.variablesTree(session), "the debug session has no Variables view")
 
             var queryNode: XValueNodeImpl? = null
             PlatformTestUtil.waitWithEventsDispatching("'query' did not appear in the variables tree", {
@@ -132,6 +116,6 @@ class VisualizeActionTest : DebuggerTestBase() {
 
     @AfterMethod(alwaysRun = true)
     fun restoreDebuggerSettings() {
-        DotNetDebuggerSettings.instance.disableTargetInvokeWithWatches()
+        RiderCompat.disableMethodCalls()
     }
 }

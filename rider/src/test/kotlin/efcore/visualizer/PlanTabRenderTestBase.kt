@@ -11,18 +11,10 @@ import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.TestActionEvent
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowser
-import com.intellij.xdebugger.impl.XDebugSessionImpl
 import com.intellij.xdebugger.impl.ui.tree.nodes.XValueContainerNode
 import com.intellij.xdebugger.impl.ui.tree.nodes.XValueNodeImpl
 import com.jetbrains.rider.debugger.settings.DotNetDebuggerSettings
-import com.jetbrains.rider.test.annotations.Solution
-import com.jetbrains.rider.test.annotations.TestSettings
 import com.jetbrains.rider.test.base.DebuggerTestBase
-import com.jetbrains.rider.test.debugger.disableTargetInvokeWithWatches
-import com.jetbrains.rider.test.debugger.enableTargetInvokeWithWatches
-import com.jetbrains.rider.test.enums.BuildTool
-import com.jetbrains.rider.test.enums.Mono
-import com.jetbrains.rider.test.enums.sdk.SdkVersion
 import com.jetbrains.rider.test.scriptingApi.resumeSession
 import com.jetbrains.rider.test.scriptingApi.toggleBreakpoint
 import com.jetbrains.rider.test.scriptingApi.waitForPause
@@ -30,7 +22,6 @@ import org.cef.browser.CefBrowser
 import org.cef.handler.CefDisplayHandlerAdapter
 import org.testng.annotations.AfterMethod
 import org.testng.SkipException
-import org.testng.annotations.Test
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.deleteIfExists
 import kotlin.test.assertContains
@@ -48,26 +39,24 @@ import kotlin.test.assertTrue
  * (the same browser type HTMLEditorProvider's tab uses). Screenshots are not taken: in this off-screen test mode
  * Chromium keeps a 300x200 default surface, which makes captures misleading.
  */
-@TestSettings(sdkVersion = SdkVersion.AUTODETECT, buildTool = BuildTool.AUTODETECT, mono = Mono.NONE)
-@Solution("SampleApp")
-class PlanTabRenderTest : DebuggerTestBase() {
+abstract class PlanTabRenderTestBase : DebuggerTestBase() {
     override val projectName = "SampleApp"
 
-    @Test
-    fun planTabRendersWithStylesAndScript() {
+    // Called from the version-specific @Test in PlanTabRenderTest (Rider reads test annotations from the declaring class).
+    protected fun runPlanTabRendersWithStylesAndScript() {
         if (System.getenv("DISPLAY").isNullOrEmpty()) throw SkipException("JCEF needs an X display; run under xvfb-run")
-        val programCs = activeSolutionDirectory.resolve("SampleApp/Program.cs").toFile()
+        val programCs = SampleApp.programCs
         val line = programCs.readLines().indexOfFirst { "// BREAKPOINT" in it } + 1
 
         testDebugProgram({
-            DotNetDebuggerSettings.instance.enableTargetInvokeWithWatches()
+            RiderCompat.enableMethodCalls()
             toggleBreakpoint(project, "SampleApp/Program.cs", line)
         }, {
             waitForPause()
             assertTrue(JBCefApp.isSupported(), "JCEF is not supported in this test environment")
 
             // Real Variables view -> select "query" -> real action; capture what the presenter is asked to show.
-            val tree = assertNotNull((session as XDebugSessionImpl).sessionTabIfInitialized?.variablesView?.tree)
+            val tree = assertNotNull(RiderCompat.variablesTree(session))
             var node: XValueNodeImpl? = null
             PlatformTestUtil.waitWithEventsDispatching("'query' not in Variables view", {
                 node = (tree.root as? XValueContainerNode<*>)?.children?.filterIsInstance<XValueNodeImpl>()?.firstOrNull { it.name == "query" }
@@ -143,6 +132,6 @@ class PlanTabRenderTest : DebuggerTestBase() {
 
     @AfterMethod(alwaysRun = true)
     fun restoreDebuggerSettings() {
-        DotNetDebuggerSettings.instance.disableTargetInvokeWithWatches()
+        RiderCompat.disableMethodCalls()
     }
 }

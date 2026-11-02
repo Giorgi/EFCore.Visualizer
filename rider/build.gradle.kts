@@ -22,13 +22,21 @@ kotlin {
     jvmToolchain(21)
 }
 
+// Rider's test framework API differs between versions: shared test logic lives in src/test/kotlin, the
+// version-specific bits (test annotations, a few helpers) in src/test/kotlin-<251|262>.
+val riderMajor = providers.gradleProperty("riderVersion").get().substringBefore('.').toInt()
+sourceSets["test"].kotlin.srcDir(if (riderMajor >= 2026) "src/test/kotlin-262" else "src/test/kotlin-251")
+
 dependencies {
     intellijPlatform {
         rider(providers.gradleProperty("riderVersion")) { useInstaller = false }
         jetbrainsRuntime()
-        // Embedded browser (JCEF) APIs, used by the plan-tab rendering test.
-        bundledModule("intellij.platform.ui.jcef")
-        bundledModule("intellij.libraries.jcef")
+        // Embedded browser (JCEF) APIs, used by the plan-tab rendering test: separate modules in 2026.2, part of the
+        // core platform jars in 2025.1 (2026.1 not checked).
+        if (riderMajor >= 2026) {
+            bundledModule("intellij.platform.ui.jcef")
+            bundledModule("intellij.libraries.jcef")
+        }
         // Rider's test framework (solution/debugger scripting API) ships inside the SDK.
         bundledLibrary(provider { project.intellijPlatform.platformPath.resolve("lib/testFramework.jar").toString() })
     }
@@ -40,12 +48,19 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         name = "EFCore Visualizer"
+        ideaVersion {
+            // Oldest Rider the tests and the Plugin Verifier pass on (2025.1). No upper bound.
+            sinceBuild = "251"
+            untilBuild = provider { null }
+        }
     }
     pluginVerification {
         ides {
-            create(org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.Rider, providers.gradleProperty("riderVersion").get()) {
-                useInstaller = false
-            }
+            // Comma-separated Rider versions (gradle.properties: verifyRiderVersions); falls back to the build target.
+            providers.gradleProperty("verifyRiderVersions").orElse(providers.gradleProperty("riderVersion")).get()
+                .split(',').map { it.trim() }.filter { it.isNotEmpty() }.forEach { version ->
+                    create(org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.Rider, version) { useInstaller = false }
+                }
         }
     }
     buildSearchableOptions = false
@@ -78,8 +93,18 @@ tasks.withType<PrepareSandboxTask>().configureEach {
     }
 }
 
+// Rider 2025.x SDK declares a test-only service for the bundled JavaScript "Live Edit" plugin whose class it does not
+// ship; it fails when a debug session starts. The tests don't need Live Edit, so leave it out of the test sandbox.
+tasks.named<PrepareSandboxTask>("prepareTestSandbox") {
+    if (riderMajor < 2026) disabledPlugins.add("com.intellij.plugins.html.instantEditing")
+}
+
 tasks.withType<Test>().configureEach {
     useTestNG()
+    // Test methods live in abstract *TestBase classes; select the concrete per-version classes by name, since
+    // class scanning does not pick up inherited TestNG methods.
+    isScanForTestClasses = false
+    include("**/*Test.class")
     // Let JCEF (embedded browser) start inside tests, off-screen, so the plan tab can be rendered and checked.
     systemProperty("ide.browser.jcef.testMode.enabled", "true")
     systemProperty("ide.browser.jcef.headless.enabled", "true")

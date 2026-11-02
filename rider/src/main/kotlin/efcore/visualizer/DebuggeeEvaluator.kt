@@ -96,6 +96,9 @@ object DebuggeeEvaluator {
             fullValueRequested = true
             fullValueEvaluator.startEvaluation(object : XFullValueEvaluator.XFullValueEvaluationCallback {
                 override fun evaluated(fullValue: String) = complete(type, fullValue, isString = true, isError = false)
+                // Abstract up to 2025.x (deprecated with a default since), so it must stay for older Rider versions.
+                @Suppress("OVERRIDE_DEPRECATION", "OverridingDeprecatedMember")
+                override fun evaluated(fullValue: String, font: java.awt.Font?) = evaluated(fullValue)
                 override fun errorOccurred(errorMessage: String) {
                     future.completeExceptionally(EvaluationException(errorMessage, expression))
                 }

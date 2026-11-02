@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.xdebugger.XDebuggerManager
+import com.intellij.xdebugger.impl.ui.tree.XDebuggerTree
 import com.intellij.xdebugger.impl.ui.tree.actions.XDebuggerTreeActionBase
 import efcore.visualizer.QueryPlanVisualizer.unwrap
 
@@ -18,15 +19,18 @@ class VisualizeQueryPlanAction : DumbAwareAction() {
 
     override fun getActionUpdateThread() = ActionUpdateThread.EDT
 
+    /** The event's project, or the debugger tree's own (some contexts, e.g. Rider 2025.1 without a frame, lack it). */
+    private fun projectOf(e: AnActionEvent) = e.project ?: XDebuggerTree.getTree(e.dataContext)?.project
+
     override fun update(e: AnActionEvent) {
-        val project = e.project
+        val project = projectOf(e)
         val session = project?.let { XDebuggerManager.getInstance(it).currentSession }
         e.presentation.isEnabledAndVisible =
             session != null && session.isSuspended && XDebuggerTreeActionBase.getSelectedValue(e.dataContext) != null
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        val project = e.project ?: return
+        val project = projectOf(e) ?: return
         val session = XDebuggerManager.getInstance(project).currentSession ?: return
         val node = XDebuggerTreeActionBase.getSelectedNode(e.dataContext) ?: return
         val presenter = service<QueryPlanPresenter>()

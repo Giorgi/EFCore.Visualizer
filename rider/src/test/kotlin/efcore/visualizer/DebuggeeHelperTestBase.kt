@@ -1,20 +1,12 @@
 package efcore.visualizer
 
 import com.jetbrains.rider.debugger.settings.DotNetDebuggerSettings
-import com.jetbrains.rider.test.annotations.Solution
-import com.jetbrains.rider.test.annotations.TestSettings
-import com.jetbrains.rider.test.enums.BuildTool
-import com.jetbrains.rider.test.enums.Mono
-import com.jetbrains.rider.test.enums.sdk.SdkVersion
 import com.jetbrains.rider.test.base.DebuggerTestBase
-import com.jetbrains.rider.test.debugger.disableTargetInvokeWithWatches
-import com.jetbrains.rider.test.debugger.enableTargetInvokeWithWatches
 import com.jetbrains.rider.test.scriptingApi.evaluateExpression
 import com.jetbrains.rider.test.scriptingApi.resumeSession
 import com.jetbrains.rider.test.scriptingApi.toggleBreakpoint
 import com.jetbrains.rider.test.scriptingApi.waitForPause
 import org.testng.annotations.AfterMethod
-import org.testng.annotations.Test
 import com.intellij.testFramework.PlatformTestUtil
 import java.io.File
 import kotlin.io.path.deleteIfExists
@@ -29,26 +21,23 @@ import kotlin.test.assertTrue
  * debugger-agnostic helper through Rider's own expression evaluator (func-eval):
  *   System.Reflection.Assembly.LoadFrom(@"<helper>") then IQueryableObjectSource.QueryPlanHelper.GetPlanFile(query)
  */
-// Use the .NET SDK found on PATH instead of having the framework download toolsets.
-@TestSettings(sdkVersion = SdkVersion.AUTODETECT, buildTool = BuildTool.AUTODETECT, mono = Mono.NONE)
-@Solution("SampleApp")
-class DebuggeeHelperTest : DebuggerTestBase() {
+abstract class DebuggeeHelperTestBase : DebuggerTestBase() {
     override val projectName = "SampleApp"
 
     // Resolved from the installed plugin (<plugin>/netcoreapp), i.e. the packaged layout is under test too.
     private val helperDll by lazy { QueryPlanVisualizer.helperPath().toString() }
     private val timeout = Duration.ofSeconds(60)
 
-    @Test
-    fun loadsHelperAndGetsPlanFile() {
-        val programCs = activeSolutionDirectory.resolve("SampleApp/Program.cs").toFile()
+    // Called from the version-specific @Test in DebuggeeHelperTest (Rider reads test annotations from the declaring class).
+    protected fun runLoadsHelperAndGetsPlanFile() {
+        val programCs = SampleApp.programCs
         val line = programCs.readLines().indexOfFirst { "// BREAKPOINT" in it } + 1
         assertTrue(line > 0, "BREAKPOINT marker not found in $programCs")
 
         testDebugProgram({
             // Rider tests run with method calls in watches disabled ("Implicit evaluation is disabled");
             // the visualizer needs them, exactly like Rider's default user settings allow.
-            DotNetDebuggerSettings.instance.enableTargetInvokeWithWatches()
+            RiderCompat.enableMethodCalls()
             toggleBreakpoint(project, "SampleApp/Program.cs", line)
         }, {
             waitForPause()
@@ -104,6 +93,6 @@ class DebuggeeHelperTest : DebuggerTestBase() {
 
     @AfterMethod(alwaysRun = true)
     fun restoreDebuggerSettings() {
-        DotNetDebuggerSettings.instance.disableTargetInvokeWithWatches()
+        RiderCompat.disableMethodCalls()
     }
 }
