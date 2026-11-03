@@ -1,8 +1,10 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { EvaluationError, getPlanFile, getQueryFile, loadHelper } from '../../debuggee';
+import { assetFiles } from '../../webview';
 import { VISUALIZE_COMMAND, VisualizeResult } from '../../extension';
 
 const extensionRoot = path.resolve(__dirname, '../../..');
@@ -10,6 +12,22 @@ const workspace = process.env.EFCORE_VISUALIZER_TEST_WORKSPACE ?? path.join(exte
 const programCs = path.join(workspace, 'Program.cs');
 const programDll = path.join(workspace, 'bin/Debug/net8.0/SampleApp.dll');
 const helperDll = path.join(extensionRoot, 'dist/netcoreapp/EFCore.Visualizer.DebuggeeHelper.dll');
+const resourcesDir = path.join(extensionRoot, 'dist/Resources');
+
+/** Files the helper generated in the temp folder. */
+function generatedPages(): string[] {
+  return fs.readdirSync(os.tmpdir()).filter((f) => /^EFCore\.Visualizer-.*\.html$/.test(f)).sort();
+}
+
+/** Lists every file under dist/Resources, to check that nothing is written there. */
+function resourceFiles(): string[] {
+  return (fs.readdirSync(resourcesDir, { recursive: true }) as string[]).sort();
+}
+
+function samePath(a: string, b: string): boolean {
+  const normalize = (p: string) => path.resolve(p).replace(/[\\/]+$/, '');
+  return process.platform === 'win32' ? normalize(a).toLowerCase() === normalize(b).toLowerCase() : normalize(a) === normalize(b);
+}
 
 interface Stopped {
   session: vscode.DebugSession;
@@ -114,6 +132,7 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
   });
 
   it('loads the helper with Assembly.LoadFrom and calls GetPlanFile(query)', async () => {
+    const resourcesBefore = resourceFiles();
     const loaded = await loadHelper(session, frameId, helperDll);
     console.log('Assembly.LoadFrom =>', loaded.type, loaded.result);
     assert.match(loaded.result, /EFCore\.Visualizer\.DebuggeeHelper/);
@@ -130,6 +149,23 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     assert.match(plan, /Query Plan/);
     assert.match(plan, /SEARCH \w+ USING INDEX IX_Blogs_Rating/);
 
+    // Pages go to the temp folder and link their scripts and styles in dist/Resources by absolute file: URLs.
+    for (const [file, html, assets] of [
+      [queryFile, fs.readFileSync(queryFile, 'utf-8'), ['Common/highlight.css', 'Common/highlight.dark.min.css', 'Common/highlight.min.js', 'Common/highlight.sql.js']],
+      [planFile, plan, ['Common/treeflex.css']],
+    ] as const) {
+      assert.match(path.basename(file), /^EFCore\.Visualizer-.*\.html$/);
+      assert.ok(samePath(path.dirname(file), os.tmpdir()), `${file} is not in the temp folder ${os.tmpdir()}`);
+      assert.doesNotMatch(html, /<base\b/i, "a <base> would break the page's own #links");
+      const linked = assetFiles(html);
+      assert.strictEqual(linked.length, assets.length, `assets linked from ${file}: ${linked.join(', ')}`);
+      assets.forEach((asset, i) => {
+        assert.ok(samePath(linked[i], path.join(resourcesDir, asset)), `${linked[i]} should be ${asset}`);
+        assert.ok(fs.existsSync(linked[i]), `${linked[i]} does not exist`);
+      });
+    }
+    assert.deepStrictEqual(resourceFiles(), resourcesBefore, 'nothing should be written to dist/Resources');
+
     // Exceptions thrown inside the debuggee must surface as EvaluationError, not as a bogus path.
     await assert.rejects(getPlanFile(session, frameId, 'context'), (e: unknown) => {
       console.log('GetPlanFile(context) =>', (e as Error).message);
@@ -142,8 +178,8 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
 
   it('Visualize Query Plan command (Variables view context menu) opens the plan in a webview', async () => {
     await waitFor(() => vscode.debug.activeStackItem, 'the stopped frame to become the active stack item');
-    const sqliteDir = path.join(extensionRoot, 'dist/Resources/SQLite');
-    const filesBefore = fs.readdirSync(sqliteDir).sort();
+    const pagesBefore = generatedPages();
+    const resourcesBefore = resourceFiles();
 
     // Same argument shape VS Code passes from the debug/variables/context menu.
     const result = await vscode.commands.executeCommand<VisualizeResult | undefined>(VISUALIZE_COMMAND, {
@@ -155,13 +191,11 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     assert.ok(result, 'command returned nothing (an error message was shown)');
     assert.strictEqual(result.kind, 'plan');
     assert.strictEqual(result.panel.title, 'Query Plan: query');
-    assert.match(result.html, /<base href="[^"]*vscode-(cdn|resource)[^"]*\/Resources\/SQLite\/">/);
+    assert.match(result.html, /<link rel="stylesheet" href="[^"]*vscode-(cdn|resource)[^"]*\/Resources\/Common\/treeflex\.css">/);
     assert.match(result.html, /SEARCH \w+ USING INDEX IX_Blogs_Rating/);
-    assert.deepStrictEqual(
-      fs.readdirSync(sqliteDir).sort(),
-      filesBefore,
-      'generated plan file should be deleted once loaded into the webview',
-    );
+    assert.doesNotMatch(result.html, /file:/, 'every file: link must be replaced with a webview URI');
+    assert.deepStrictEqual(generatedPages(), pagesBefore, 'generated plan file should be deleted once loaded into the webview');
+    assert.deepStrictEqual(resourceFiles(), resourcesBefore, 'nothing should be written to dist/Resources');
     result.panel.dispose();
   });
 });

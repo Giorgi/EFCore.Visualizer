@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 
 namespace IQueryableObjectSource;
 
@@ -12,7 +13,8 @@ namespace IQueryableObjectSource;
 /// Debuggers call these through expression evaluation (func-eval), for example:
 /// <c>System.Reflection.Assembly.LoadFrom("…/EFCore.Visualizer.DebuggeeHelper.dll")</c> followed by
 /// <c>IQueryableObjectSource.QueryPlanHelper.GetPlanFile(query)</c>.
-/// Both methods return the full path of a generated HTML file and throw on failure.
+/// Both methods return the full path of an HTML file generated in the temp folder and throw on failure.
+/// The caller deletes the file when it no longer needs it.
 /// </summary>
 public static class QueryPlanHelper
 {
@@ -57,34 +59,65 @@ public static class QueryPlanHelper
 
     private static string GeneratePlanFile(DatabaseProvider provider, string query, string rawPlan)
     {
-        var planDirectory = provider.GetPlanDirectory(ResourcesLocation);
-        var planFile = Path.Combine(planDirectory, Path.ChangeExtension(Path.GetRandomFileName(), "html"));
-
-        var planPageHtml = File.ReadAllText(Path.Combine(planDirectory, "template.html"))
+        var planPageHtml = ReadTemplate(provider.GetPlanDirectory(ResourcesLocation))
             .Replace("{plan}", provider.Encode(rawPlan))
             .Replace("{query}", provider.Encode(query));
 
-        File.WriteAllText(planFile, planPageHtml);
-
-        return planFile;
+        return WritePage(planPageHtml);
     }
 
     private static string GenerateQueryFile(string query)
     {
-        var templatePath = Path.Combine(ResourcesLocation, "Common", "template.html");
+        var queryDirectory = Path.Combine(ResourcesLocation, "Common");
+        var templatePath = Path.Combine(queryDirectory, "template.html");
         if (!File.Exists(templatePath))
         {
             throw new FileNotFoundException("Common Query template file not found", templatePath);
         }
 
-        var queryDirectory = Path.Combine(ResourcesLocation, "Common");
-        var queryFile = Path.Combine(queryDirectory, Path.ChangeExtension(Path.GetRandomFileName(), "html"));
+        var finalHtml = ReadTemplate(queryDirectory).Replace("{query}", WebUtility.HtmlEncode(query));
 
-        var finalHtml = File.ReadAllText(templatePath).Replace("{query}", WebUtility.HtmlEncode(query));
+        return WritePage(finalHtml);
+    }
 
-        File.WriteAllText(queryFile, finalHtml);
+    /// <summary>Writes the page to a new file in the temp folder and returns its path.</summary>
+    private static string WritePage(string html)
+    {
+        var pageFile = Path.Combine(Path.GetTempPath(), "EFCore.Visualizer-" + Path.ChangeExtension(Path.GetRandomFileName(), "html"));
 
-        return queryFile;
+        // CreateNew: never write through a file or link that already exists under this name.
+        using var stream = new FileStream(pageFile, FileMode.CreateNew, FileAccess.Write);
+        using var writer = new StreamWriter(stream);
+        writer.Write(html);
+
+        return pageFile;
+    }
+
+    // <script src="..."> and <link href="..."> in a template.
+    private static readonly Regex AssetLink = new(@"(<(?:script|link)\b[^>]*?\b(?:src|href)\s*=\s*"")([^""]*)("")", RegexOptions.IgnoreCase);
+
+    /// <summary>
+    /// Reads <c>template.html</c> from <paramref name="templateDirectory"/>. The page is written to the temp folder,
+    /// so the template's relative links to its scripts and styles ("qp.css", "../Common/highlight.min.js",
+    /// "..\Common\treeflex.css") are made absolute file: URLs. A &lt;base&gt; would do the same, but it would also
+    /// redirect the page's own "#..." links (pev2's tabs) to the template folder.
+    /// This runs on the template only, before any query or plan text goes in.
+    /// </summary>
+    private static string ReadTemplate(string templateDirectory)
+    {
+        var template = File.ReadAllText(Path.Combine(templateDirectory, "template.html"));
+
+        return AssetLink.Replace(template, match =>
+        {
+            var link = match.Groups[2].Value;
+            if (link.Length == 0 || link.StartsWith("#") || link.StartsWith("/") || link.StartsWith("\\") || link.Contains(":"))
+            {
+                return match.Value; // not relative to the template folder
+            }
+
+            var file = Path.GetFullPath(Path.Combine(templateDirectory, link.Replace('\\', '/')));
+            return match.Groups[1].Value + WebUtility.HtmlEncode(new Uri(file).AbsoluteUri) + match.Groups[3].Value;
+        });
     }
 
     private static DatabaseProvider GetDatabaseProvider(DbCommand command)
