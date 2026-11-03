@@ -39,8 +39,19 @@ function addCsp(html: string, csp: string): string {
   return anchor ? html.slice(0, anchor.index + anchor[0].length) + meta + html.slice(anchor.index + anchor[0].length) : meta + html;
 }
 
-export function toWebviewHtml(html: string, webview: vscode.Webview): string {
-  const withAssets = html.replace(FILE_ASSET, (_, start: string, url: string, end: string) => {
+/**
+ * The templates switch to dark mode with prefers-color-scheme (a <link media>, @media rules and, for Bootstrap,
+ * matchMedia). In a webview that follows the OS, not the VS Code theme (unless window.systemColorTheme is "auto"),
+ * so the extension decides: each "(prefers-color-scheme: dark)" in those three places becomes "all" or "not all".
+ */
+const PREFERS_DARK = /(media\s*=\s*"|@media\s+|matchMedia\(\s*["'])\(prefers-color-scheme:\s*dark\)/gi;
+
+export function isDarkTheme(kind: vscode.ColorThemeKind): boolean {
+  return kind === vscode.ColorThemeKind.Dark || kind === vscode.ColorThemeKind.HighContrast;
+}
+
+export function toWebviewHtml(html: string, webview: vscode.Webview, dark: boolean): string {
+  const withAssets = html.replace(PREFERS_DARK, (_, before: string) => before + (dark ? 'all' : 'not all')).replace(FILE_ASSET, (_, start: string, url: string, end: string) => {
     const uri = webview.asWebviewUri(vscode.Uri.file(fileURLToPath(url.replace(/&amp;/g, '&'))));
     return `${start}${uri.toString(true)}${end}`;
   });
@@ -63,8 +74,12 @@ export function showHtmlFile(filePath: string, title: string): { panel: vscode.W
       retainContextWhenHidden: true,
     });
 
-    const html = toWebviewHtml(source, panel.webview);
-    panel.webview.html = html;
+    const render = () => (panel.webview.html = toWebviewHtml(source, panel.webview, isDarkTheme(vscode.window.activeColorTheme.kind)));
+    // Re-render when the theme changes, so the page doesn't keep the old colors.
+    const themeListener = vscode.window.onDidChangeActiveColorTheme(render);
+    panel.onDidDispose(() => themeListener.dispose());
+
+    const html = render();
     return { panel, html };
   } finally {
     // The page is fully loaded into the webview; nothing references the generated file any more.

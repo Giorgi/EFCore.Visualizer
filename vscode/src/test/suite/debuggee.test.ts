@@ -206,6 +206,33 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     result.panel.dispose();
   });
 
+  it('plan page follows the VS Code theme, not the OS', async () => {
+    // In a webview, prefers-color-scheme follows the OS (with the default window.systemColorTheme), so the
+    // extension resolves the templates' "(prefers-color-scheme: dark)" itself and re-renders on theme changes.
+    const workbench = () => vscode.workspace.getConfiguration('workbench');
+    const setTheme = async (theme: string, kind: vscode.ColorThemeKind) => {
+      await workbench().update('colorTheme', theme, vscode.ConfigurationTarget.Global);
+      await waitFor(() => (vscode.window.activeColorTheme.kind === kind ? true : undefined), `${theme} to become active`);
+    };
+    try {
+      await setTheme('Default Dark Modern', vscode.ColorThemeKind.Dark);
+      const result = await vscode.commands.executeCommand<VisualizeResult | undefined>(VISUALIZE_COMMAND, {
+        sessionId: session.id,
+        variable: { name: 'query', evaluateName: 'query' },
+      });
+      assert.ok(result, 'command returned nothing (an error message was shown)');
+      assert.doesNotMatch(result.html, /prefers-color-scheme:\s*dark\)/, 'the page must not depend on the OS color scheme');
+      assert.match(result.html, /@media all \{/, 'SQLite template should be in dark mode');
+
+      await setTheme('Default Light Modern', vscode.ColorThemeKind.Light);
+      await waitFor(() => (/@media not all \{/.test(result.panel.webview.html) ? true : undefined), 'the open plan to switch to light mode');
+      assert.match(result.panel.webview.html, /SEARCH \w+ USING INDEX IX_Blogs_Rating/);
+      result.panel.dispose();
+    } finally {
+      await workbench().update('colorTheme', undefined, vscode.ConfigurationTarget.Global);
+    }
+  });
+
   it('shows Visualize Query Plan only on EF Core queries and DbSets', async () => {
     // The variableType clause of the Variables/Watch menu entries in package.json.
     const pkg = JSON.parse(fs.readFileSync(path.join(extensionRoot, 'package.json'), 'utf-8'));
