@@ -21,12 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.533" />
+    <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.549" />
     <PackageReference Include="Microsoft.VisualStudio.DebuggerVisualizers" Version="17.6.1032901" />
-    <PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.9.2092" />
-    <PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.9.2092" />
-    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.8.37222" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2210.55" />
+    <PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.14.40608" />
+    <PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.14.40608" />
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3719.77" />
   </ItemGroup>
 
   <ItemGroup>
