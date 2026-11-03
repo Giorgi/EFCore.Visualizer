@@ -42,16 +42,17 @@ function addCsp(html: string, csp: string): string {
 /**
  * The templates switch to dark mode with prefers-color-scheme (a <link media>, @media rules and, for Bootstrap,
  * matchMedia). In a webview that follows the OS, not the VS Code theme (unless window.systemColorTheme is "auto"),
- * so the extension decides: each "(prefers-color-scheme: dark)" in those three places becomes "all" or "not all".
+ * so the extension decides: each "(prefers-color-scheme: dark|light)" in those three places becomes "all" when it
+ * matches the VS Code theme and "not all" when it doesn't.
  */
-const PREFERS_DARK = /(media\s*=\s*"|@media\s+|matchMedia\(\s*["'])\(prefers-color-scheme:\s*dark\)/gi;
+const PREFERS_SCHEME = /(media\s*=\s*"|@media\s+|matchMedia\(\s*["'])\(prefers-color-scheme:\s*(dark|light)\)/gi;
 
 export function isDarkTheme(kind: vscode.ColorThemeKind): boolean {
   return kind === vscode.ColorThemeKind.Dark || kind === vscode.ColorThemeKind.HighContrast;
 }
 
 export function toWebviewHtml(html: string, webview: vscode.Webview, dark: boolean): string {
-  const withAssets = html.replace(PREFERS_DARK, (_, before: string) => before + (dark ? 'all' : 'not all')).replace(FILE_ASSET, (_, start: string, url: string, end: string) => {
+  const withAssets = html.replace(PREFERS_SCHEME, (_, before: string, scheme: string) => before + ((scheme.toLowerCase() === 'dark') === dark ? 'all' : 'not all')).replace(FILE_ASSET, (_, start: string, url: string, end: string) => {
     const uri = webview.asWebviewUri(vscode.Uri.file(fileURLToPath(url.replace(/&amp;/g, '&'))));
     return `${start}${uri.toString(true)}${end}`;
   });

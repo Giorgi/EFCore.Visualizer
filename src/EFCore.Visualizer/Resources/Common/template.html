@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Query Plan Visualizer</title>
-    <link rel="stylesheet" href="highlight.css">
+    <link rel="stylesheet" media="(prefers-color-scheme: light)" href="highlight.css">
     <link rel="stylesheet" media="(prefers-color-scheme: dark)" href="highlight.dark.min.css">
     <script type="text/javascript" src="highlight.min.js"></script>
     <script type="text/javascript" src="highlight.sql.js"></script>
@@ -20,8 +20,14 @@
         }
 
         .hljs-keyword {
-            color: #800;
             text-transform: uppercase;
+        }
+
+        /* Only in light mode: in dark mode highlight.dark.min.css colors the keywords. */
+        @media (prefers-color-scheme: light) {
+            .hljs-keyword {
+                color: #800;
+            }
         }
 
         .hljs-built_in {

@@ -221,7 +221,7 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
         variable: { name: 'query', evaluateName: 'query' },
       });
       assert.ok(result, 'command returned nothing (an error message was shown)');
-      assert.doesNotMatch(result.html, /prefers-color-scheme:\s*dark\)/, 'the page must not depend on the OS color scheme');
+      assert.doesNotMatch(result.html, /prefers-color-scheme:\s*(dark|light)\)/, 'the page must not depend on the OS color scheme');
       assert.match(result.html, /@media all \{/, 'SQLite template should be in dark mode');
 
       await setTheme('Default Light Modern', vscode.ColorThemeKind.Light);
