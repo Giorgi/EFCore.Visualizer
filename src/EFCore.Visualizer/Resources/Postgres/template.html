@@ -4,7 +4,14 @@
 <link rel="stylesheet" href="style.css" />
 <meta charset="utf-8">
 
-<div id="app" style="height:100%">
+<script>
+  // Bootstrap 5.3 (and pev2's styles) switch to dark mode through data-bs-theme,
+  // not prefers-color-scheme. The extension sets the preferred scheme from the VS theme.
+  document.documentElement.setAttribute("data-bs-theme",
+    window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+</script>
+
+<div id="app" class="d-flex flex-column vh-100">
   <pev2 :plan-source="plan" :plan-query="query" />
 </div>
 
