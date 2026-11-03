@@ -23,13 +23,9 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v3
 
-    # The VSIX project packs IQueryableObjectSource.dll from that project's bin folder,
-    # but the solution has no project reference between them, so build it first.
-    - name: Build IQueryableObjectSource
-      run: msbuild src\IQueryableObjectSource\IQueryableObjectSource.csproj -restore -p:Configuration=$env:Configuration -v:m
-
+    # The solution's BuildDependency builds IQueryableObjectSource before the VSIX project packs its DLL.
     - name: Build extension
-      run: msbuild src\EFCore.Visualizer.sln -restore -p:Configuration=$env:Configuration -v:m
+      run: msbuild src\EFCore.Visualizer.slnx -restore -p:Configuration=$env:Configuration -v:m
 
     - name: Upload VSIX
       uses: actions/upload-artifact@v7

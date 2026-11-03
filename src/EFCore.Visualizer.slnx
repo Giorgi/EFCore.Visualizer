@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="EFCore.Visualizer/EFCore.Visualizer.csproj">
+    <BuildDependency Project="IQueryableObjectSource/IQueryableObjectSource.csproj" />
+    <Deploy Solution="Debug|*" />
+  </Project>
+  <Project Path="IQueryableObjectSource/IQueryableObjectSource.csproj" />
+</Solution>
