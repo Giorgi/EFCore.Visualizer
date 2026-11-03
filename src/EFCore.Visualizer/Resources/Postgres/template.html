@@ -4,6 +4,30 @@
 <link rel="stylesheet" href="style.css" />
 <meta charset="utf-8">
 
+<style>
+  /* Match the VS tool window. The extension injects --bg-color (the VS background) after the page loads.
+     Before that, or if it's missing, the fallbacks are Bootstrap's own colors.
+     The plan area (tertiary) stays one shade apart from the body, as in Bootstrap. */
+  [data-bs-theme=light] {
+    --bs-body-bg: var(--bg-color, #fff);
+    --bs-tertiary-bg: color-mix(in srgb, var(--bg-color, #fff) 96%, black);
+  }
+
+  [data-bs-theme=dark] {
+    --bs-body-bg: var(--bg-color, #212529);
+    --bs-tertiary-bg: color-mix(in srgb, var(--bg-color, #212529) 93%, white);
+  }
+
+  /* Bootstrap's background utilities read the -rgb variants, which color-mix() can't produce. */
+  .bg-body {
+    background-color: var(--bs-body-bg) !important;
+  }
+
+  .bg-body-tertiary {
+    background-color: var(--bs-tertiary-bg) !important;
+  }
+</style>
+
 <script>
   // Bootstrap 5.3 (and pev2's styles) switch to dark mode through data-bs-theme,
   // not prefers-color-scheme. The extension sets the preferred scheme from the VS theme.
