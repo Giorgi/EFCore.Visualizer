@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { EvaluationError, getPlanFile, getQueryFile, loadHelper } from '../../debuggee';
-import { assetFiles } from '../../webview';
+import { assetFiles, contentSecurityPolicy } from '../../webview';
 import { VISUALIZE_COMMAND, VisualizeResult } from '../../extension';
 
 const extensionRoot = path.resolve(__dirname, '../../..');
@@ -194,6 +194,13 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     assert.match(result.html, /<link rel="stylesheet" href="[^"]*vscode-(cdn|resource)[^"]*\/Resources\/Common\/treeflex\.css">/);
     assert.match(result.html, /SEARCH \w+ USING INDEX IX_Blogs_Rating/);
     assert.doesNotMatch(result.html, /file:/, 'every file: link must be replaced with a webview URI');
+    // The CSP must come before the first script or stylesheet. It allows only the webview's own resources.
+    const policy = contentSecurityPolicy(result.panel.webview.cspSource);
+    console.log('CSP =>', policy);
+    assert.match(policy, /^default-src 'none'; /);
+    assert.doesNotMatch(policy, /connect-src/);
+    const csp = result.html.indexOf(`<meta http-equiv="Content-Security-Policy" content="${policy}">`);
+    assert.ok(csp >= 0 && csp < result.html.search(/<(script|link)\b/i), 'CSP <meta> missing or after the first asset');
     assert.deepStrictEqual(generatedPages(), pagesBefore, 'generated plan file should be deleted once loaded into the webview');
     assert.deepStrictEqual(resourceFiles(), resourcesBefore, 'nothing should be written to dist/Resources');
     result.panel.dispose();

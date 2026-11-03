@@ -40,6 +40,6 @@ npm test                   # Linux without a display: xvfb-run -a npm test --ign
   which the extension then reads. This assumes the debuggee and the extension host share a file system
   (true locally and for Remote-SSH/containers where the C# extension runs remotely; not for e.g.
   `pipeTransport` remote debugging).
-* Tested only with SQLite on Linux. SQL Server/Postgres/Oracle templates are wired up but unverified in
-  webviews; no Content-Security-Policy is set yet.
+* The integration test covers SQLite only (on Linux and Windows). The SQL Server, Postgres and Oracle pages
+  were checked in Edge with sample plans, under the same Content-Security-Policy, but not in a real webview.
 * No packaging (`vsce`) or Marketplace metadata yet.

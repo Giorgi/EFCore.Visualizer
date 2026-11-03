@@ -15,6 +15,30 @@ export function assetFiles(html: string): string[] {
   return [...html.matchAll(FILE_ASSET)].map((m) => fileURLToPath(m[2].replace(/&amp;/g, '&')));
 }
 
+/**
+ * Content-Security-Policy for the page. The templates use inline scripts and styles, and the Postgres page
+ * compiles pev2's Vue template in the browser (which needs 'unsafe-eval'). Everything else is closed: no
+ * network access at all, so even injected markup couldn't send the query or plan anywhere.
+ */
+export function contentSecurityPolicy(cspSource: string): string {
+  return [
+    "default-src 'none'",
+    `script-src ${cspSource} 'unsafe-inline' 'unsafe-eval'`,
+    `style-src ${cspSource} 'unsafe-inline'`,
+    `img-src ${cspSource} data:`,
+    `font-src ${cspSource}`,
+    "base-uri 'none'",
+    "form-action 'none'",
+  ].join('; ');
+}
+
+/** Puts the CSP <meta> before anything else that loads: after <head>, else after the doctype, else first. */
+function addCsp(html: string, csp: string): string {
+  const meta = `<meta http-equiv="Content-Security-Policy" content="${csp}">`;
+  const anchor = /<head(\s[^>]*)?>/i.exec(html) ?? /<!DOCTYPE[^>]*>/i.exec(html);
+  return anchor ? html.slice(0, anchor.index + anchor[0].length) + meta + html.slice(anchor.index + anchor[0].length) : meta + html;
+}
+
 export function toWebviewHtml(html: string, webview: vscode.Webview): string {
   const withAssets = html.replace(FILE_ASSET, (_, start: string, url: string, end: string) => {
     const uri = webview.asWebviewUri(vscode.Uri.file(fileURLToPath(url.replace(/&amp;/g, '&'))));
@@ -23,7 +47,8 @@ export function toWebviewHtml(html: string, webview: vscode.Webview): string {
 
   // Follow the VS Code theme instead of the hard-coded white/black backgrounds of the templates.
   const theme = '<style>:root{--bg-color:var(--vscode-editor-background);--text-color:var(--vscode-editor-foreground);}</style>';
-  return /<\/head>/i.test(withAssets) ? withAssets.replace(/<\/head>/i, `${theme}</head>`) : `${withAssets}${theme}`;
+  const themed = /<\/head>/i.test(withAssets) ? withAssets.replace(/<\/head>/i, `${theme}</head>`) : `${withAssets}${theme}`;
+  return addCsp(themed, contentSecurityPolicy(webview.cspSource));
 }
 
 export function showHtmlFile(filePath: string, title: string): { panel: vscode.WebviewPanel; html: string } {
