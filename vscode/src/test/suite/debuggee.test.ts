@@ -205,4 +205,44 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     assert.deepStrictEqual(resourceFiles(), resourcesBefore, 'nothing should be written to dist/Resources');
     result.panel.dispose();
   });
+
+  it('shows Visualize Query Plan only on EF Core queries and DbSets', async () => {
+    // The variableType clause of the Variables/Watch menu entries in package.json.
+    const pkg = JSON.parse(fs.readFileSync(path.join(extensionRoot, 'package.json'), 'utf-8'));
+    const whens: string[] = ['debug/variables/context', 'debug/watch/context'].map(
+      (menu) => pkg.contributes.menus[menu].find((m: { command: string }) => m.command === VISUALIZE_COMMAND).when,
+    );
+    assert.strictEqual(whens[0], whens[1], 'Variables and Watch menus should use the same condition');
+    const clause = /variableType =~ \/(.+?)\/(\s|$)/.exec(whens[0]);
+    assert.ok(clause, `no variableType clause in: ${whens[0]}`);
+    const typeFilter = new RegExp(clause[1]);
+
+    // Same type strings VS Code puts into the variableType context key.
+    const { scopes } = await session.customRequest('scopes', { frameId });
+    const { variables } = await session.customRequest('variables', { variablesReference: scopes[0].variablesReference });
+    // vsdbg appends the declared type to the name: "query [IOrderedQueryable]".
+    const bareName = (name: string) => name.replace(/ \[.*\]$/, '');
+    const locals = new Map<string, { type: string; variablesReference: number }>(
+      variables.map((v: { name: string; type: string; variablesReference: number }) => [bareName(v.name), v]),
+    );
+    const contextVar = locals.get('context');
+    assert.ok(contextVar, 'no context local');
+    const { variables: members } = await session.customRequest('variables', { variablesReference: contextVar.variablesReference });
+    const types: Record<string, string> = Object.fromEntries([...locals].map(([name, v]) => [name, v.type]));
+    types['context.Blogs'] = members.find((v: { name: string }) => bareName(v.name) === 'Blogs')?.type;
+    for (const [name, type] of Object.entries(types)) {
+      console.log(`  ${typeFilter.test(type ?? '') ? 'MENU' : '    '}  ${name}: ${type}`);
+    }
+
+    for (const name of ['query', 'blogs', 'included', 'enumerable', 'context.Blogs']) {
+      assert.match(types[name] ?? '', typeFilter, `${name} should get the menu item`);
+      // ...and the menu item must work for it.
+      const planFile = await getPlanFile(session, frameId, name);
+      assert.match(fs.readFileSync(planFile, 'utf-8'), /Query Plan/, `no plan for ${name}`);
+      fs.rmSync(planFile, { force: true });
+    }
+    for (const name of ['context', 'numbers', 'list']) {
+      assert.doesNotMatch(types[name] ?? '', typeFilter, `${name} should not get the menu item`);
+    }
+  });
 });

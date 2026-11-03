@@ -12,9 +12,11 @@ which is a thin adapter over `QueryPlanHelper`.
 
 ## Usage
 
-While a .NET (`coreclr`) session is paused, right-click an `IQueryable` in **Variables** or **Watch** and
-choose **Visualize Query Plan** (or run *EFCore Visualizer: Visualize Query Plan* from the Command Palette
-and type an expression). The plan opens in a webview beside the editor. If the plan can't be produced,
+While a .NET (`coreclr`) session is paused, right-click an EF Core query or `DbSet` in **Variables**
+or **Watch** and choose **Visualize Query Plan**, or run *EFCore Visualizer: Visualize Query Plan* from the
+Command Palette and type an expression. The menu item appears only when the variable's runtime type is
+`EntityQueryable`, `IncludableQueryable` or `InternalDbSet`, whatever its declared type (`IOrderedQueryable`,
+`IEnumerable`, ...). The plan opens in a webview beside the editor. If the plan can't be produced,
 the error is shown and the SQL is displayed instead, as in Visual Studio.
 
 ## Integration test
