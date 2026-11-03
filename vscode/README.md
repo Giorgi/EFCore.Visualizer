@@ -12,6 +12,10 @@ which is a thin adapter over `QueryPlanHelper`.
 
 ## Usage
 
+It needs a debugger that provides the `coreclr` debug type, such as the C# extension
+(`ms-dotnettools.csharp`). It doesn't declare a dependency on it, because editors other than VS Code may not
+use vsdbg; whether netcoredbg can run these evaluations is not tested yet.
+
 While a .NET (`coreclr`) session is paused, right-click an EF Core query or `DbSet` in **Variables**
 or **Watch** and choose **Visualize Query Plan**, or run *EFCore Visualizer: Visualize Query Plan* from the
 Command Palette and type an expression. The menu item appears only when the variable's runtime type is

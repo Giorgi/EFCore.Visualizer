@@ -17,9 +17,6 @@
     "Debuggers",
     "Visualization"
   ],
-  "extensionDependencies": [
-    "ms-dotnettools.csharp"
-  ],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
