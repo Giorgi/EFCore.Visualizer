@@ -1,0 +1,139 @@
+name: Publish VS Code extension
+
+# Publishes the VS Code extension to the Visual Studio Marketplace with Trusted Publishing (OIDC), no stored PAT.
+# The Marketplace policy (publisher management > Trusted Publishing) must name this repository and this workflow
+# file (vscode-publish.yml), with no environment.
+#
+# Publishing is manual only. To release: set "version" in src/EFCore.Visualizer.VSCode/package.json, push a
+# vscode-v<version> tag, then Run workflow, choose the tag under "Use workflow from" and tick "publish". A run from
+# a branch, or without "publish", only tests and packages. The VS extension's v* tags don't trigger anything here.
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to the Marketplace (only works when run from a vscode-v* tag)"
+        type: boolean
+        default: false
+
+# Two runs from the same tag would race to publish the same version.
+concurrency:
+  group: vscode-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: src/EFCore.Visualizer.VSCode
+
+jobs:
+  package:
+    name: Test and package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      vsix: ${{ steps.vsix.outputs.name }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v7
+      with:
+        # Neither job pushes, so the token doesn't stay in .git/config.
+        persist-credentials: false
+
+    # The Marketplace rejects a version it already has, so a release tag must match package.json.
+    - name: Check tag matches package.json version
+      if: github.ref_type == 'tag'
+      run: |
+        version=$(node -p "require('./package.json').version")
+        if [ "$GITHUB_REF_NAME" != "vscode-v$version" ]; then
+          echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version (expected vscode-v$version)."
+          exit 1
+        fi
+        echo "Tag $GITHUB_REF_NAME matches package.json version $version."
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Setup Node
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22
+
+    - name: Install
+      run: npm ci
+
+    - name: Build
+      run: npm run pretest
+
+    - name: Test on the current VS Code
+      run: xvfb-run -a npm test --ignore-scripts
+
+    - name: Test on VS Code 1.90 (the oldest that package.json allows)
+      run: xvfb-run -a npm test --ignore-scripts
+      env:
+        VSCODE_VERSION: 1.90.0
+
+    # vscode:prepublish builds the extension and the helper in Release and copies LICENSE.
+    - name: Package
+      id: vsix
+      run: |
+        npm run package
+        name="$(node -p "require('./package.json').name")-$(node -p "require('./package.json').version").vsix"
+        test -f "$name"
+        echo "name=$name" >> "$GITHUB_OUTPUT"
+
+    - name: Upload VSIX
+      uses: actions/upload-artifact@v7
+      with:
+        # Upload the .vsix as-is instead of zipped. The artifact is named after the file.
+        archive: false
+        path: src/EFCore.Visualizer.VSCode/${{ steps.vsix.outputs.name }}
+        if-no-files-found: error
+
+  publish:
+    name: Publish to Marketplace
+    needs: package
+    # Only from a tag, so the tag-vs-version check above has run.
+    if: inputs.publish && github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v7
+      with:
+        # Neither job pushes, so the token doesn't stay in .git/config.
+        persist-credentials: false
+
+    - name: Setup Node
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22
+
+    # Only for vsce, pinned in package-lock.json. No install scripts: this job can request the OIDC token.
+    - name: Install
+      run: npm ci --ignore-scripts
+
+    - name: Download VSIX
+      uses: actions/download-artifact@v8
+      with:
+        name: ${{ needs.package.outputs.vsix }}
+        path: src/EFCore.Visualizer.VSCode/artifacts
+        # A VSIX is a zip file. Keep it as-is instead of extracting its contents.
+        skip-decompress: true
+
+    # vsce exchanges the GitHub OIDC token (audience marketplace.visualstudio.com) for a short-lived Marketplace
+    # credential (vsce 4.1.0 or newer; 4.0.0's exchange lacked the api-version). If --oidc ever fails, do the
+    # exchange in a step of its own: POST https://marketplace.visualstudio.com/_apis/gallery/token?api-version=7.2-preview.1
+    # with "Authorization: FederatedToken <GitHub OIDC token>" and {"publisherName": "..."}, then pass the returned
+    # "credential" to "vsce publish -p" (vsce uses it like a personal access token).
+    - name: Publish
+      run: |
+        vsix="artifacts/${{ needs.package.outputs.vsix }}"
+        test -f "$vsix"
+        npx vsce publish --oidc --packagePath "$vsix"
