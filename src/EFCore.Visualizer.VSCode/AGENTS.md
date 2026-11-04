@@ -17,6 +17,9 @@ It reuses the Visual Studio visualizer's debuggee-side code (`../EFCore.Visualiz
 - `src/debuggee.ts`: the DAP `evaluate` calls into the debugged app.
 - `src/webview.ts`: turns a generated page into webview HTML (asset URIs, theme, CSP), and the plan tab.
 - `src/progress.ts`: the progress notification while a plan is retrieved.
+- `src/rating.ts`: asks for a Marketplace rating after 5 and 25 shown plans, then every 50 up to 1,000, at most
+  once per session. "Rate" or "Don't Ask Again" ends it; "Later" or closing the notification waits for the next
+  step. The count lives in `globalState`. Only shown plans count, not errors or the SQL-only page.
 - `scripts/build-helper.js`: builds `EFCore.Visualizer.Core` and lays it out in `dist/` like the VSIX:
   `dist/netcoreapp/EFCore.Visualizer.Core.dll` plus `dist/Resources/...`.
 - `src/test/`: tests that run in a real VS Code (see Testing).

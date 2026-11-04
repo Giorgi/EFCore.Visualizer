@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { EvaluationError, getPlanFile, getQueryFile, getQueryFingerprint, loadHelper } from './debuggee';
 import { withProgressNotification } from './progress';
+import { RatingPrompt, reviewUrl } from './rating';
 import { PlanView } from './webview';
 
 export const VISUALIZE_COMMAND = 'efcoreVisualizer.visualizeQuery';
@@ -46,6 +47,7 @@ class Visualizer {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly log: vscode.LogOutputChannel,
+    private readonly rating: RatingPrompt,
   ) {}
 
   register(): vscode.Disposable[] {
@@ -123,7 +125,10 @@ class Visualizer {
       logError(this.log, `No plan for ${expression}`, e);
     }
     if (planFile) {
-      return { kind: 'plan', ...this.fillTab(key, session.id, expression, fingerprint, planFile, `Query Plan: ${expression}`) };
+      const shown = this.fillTab(key, session.id, expression, fingerprint, planFile, `Query Plan: ${expression}`);
+      // Only a shown plan counts towards asking for a rating; a rating problem must never fail the plan.
+      this.rating.planShown().catch((e) => logError(this.log, 'Rating prompt failed', e));
+      return { kind: 'plan', ...shown };
     }
 
     // Same behaviour as the VS visualizer: report why there is no plan, then show the SQL.
@@ -145,7 +150,7 @@ class Visualizer {
     let tab = this.tabsByVariable.get(key);
     const isNew = !tab;
     if (!tab) {
-      const newTab: PlanTab = { view: new PlanView(title), sessionId, expression };
+      const newTab: PlanTab = { view: new PlanView(title, this.columnForNewTab()), sessionId, expression };
       this.tabsByVariable.set(key, newTab);
       this.openTabs.add(newTab);
       newTab.view.panel.onDidDispose(() => {
@@ -169,6 +174,17 @@ class Visualizer {
       }
       throw e;
     }
+  }
+
+  /**
+   * A new plan opens in the column right of the newest open plan, so plans line up side by side for comparing.
+   * The newest plan's own column counts, not the focused group: "beside the active editor" would put the new
+   * plan into the same group as an earlier one whenever the code editor had the focus. VS Code has at most 9
+   * columns; from there on, new plans join the last one as tabs.
+   */
+  private columnForNewTab(): vscode.ViewColumn {
+    const newest = [...this.openTabs].pop()?.view.panel.viewColumn;
+    return newest ? Math.min(newest + 1, vscode.ViewColumn.Nine) : vscode.ViewColumn.Beside;
   }
 
   private async reportErrors(work: () => Promise<VisualizeResult | undefined>): Promise<VisualizeResult | undefined> {
@@ -216,7 +232,8 @@ function logError(log: vscode.LogOutputChannel, what: string, e: unknown): void 
 
 export function activate(context: vscode.ExtensionContext): void {
   const log = vscode.window.createOutputChannel('EFCore Visualizer', { log: true });
-  context.subscriptions.push(log, ...new Visualizer(context, log).register());
+  const rating = new RatingPrompt(context.globalState, reviewUrl(context.extension.id));
+  context.subscriptions.push(log, ...new Visualizer(context, log, rating).register());
 }
 
 export function deactivate(): void {}

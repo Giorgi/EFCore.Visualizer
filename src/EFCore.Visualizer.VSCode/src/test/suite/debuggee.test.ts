@@ -387,6 +387,28 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     }
   });
 
+  it('opens each new plan right of the newest one, wherever the focus is', async () => {
+    const panels: vscode.WebviewPanel[] = [];
+    try {
+      for (const name of ['recentPosts', 'postsPerTopic', 'activeBlogs']) {
+        // Before the third plan, focus the first group, as clicking into the code does. "Beside the active
+        // editor" would then put the plan into the existing group right of it, next to an earlier plan.
+        if (panels.length === 2) {
+          await vscode.commands.executeCommand('workbench.action.focusFirstEditorGroup');
+        }
+        const result = await visualizeVariable(name);
+        assert.ok(result?.kind === 'plan', `expected a plan for ${name}, got ${JSON.stringify(result)}`);
+        panels.push(result.panel);
+      }
+      const columns = panels.map((p) => p.viewColumn);
+      console.log('plan columns =>', JSON.stringify(columns));
+      assert.ok(columns[0] !== undefined, 'the first plan has no column');
+      assert.deepStrictEqual(columns, [columns[0], columns[0] + 1, columns[0] + 2]);
+    } finally {
+      panels.forEach((p) => p.dispose());
+    }
+  });
+
   // Last: it ends the debug session.
   it('one tab per variable: focused when its query is unchanged, refreshed when it changed', async () => {
     const evaluate = async (expression: string) =>

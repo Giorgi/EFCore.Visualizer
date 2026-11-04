@@ -73,8 +73,9 @@ export class PlanView {
   readonly panel: vscode.WebviewPanel;
   private source = '';
 
-  constructor(title: string) {
-    this.panel = vscode.window.createWebviewPanel(PLAN_VIEW_TYPE, title, vscode.ViewColumn.Beside, {
+  /** `column`: where the tab opens; beside the active editor if not given. */
+  constructor(title: string, column: vscode.ViewColumn = vscode.ViewColumn.Beside) {
+    this.panel = vscode.window.createWebviewPanel(PLAN_VIEW_TYPE, title, column, {
       enableScripts: true,
       localResourceRoots: [],
       retainContextWhenHidden: true,

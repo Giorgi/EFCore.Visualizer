@@ -43,6 +43,12 @@
             color: var(--text-color);
         }
 
+        /* The plan's operators and tooltips have light backgrounds in every theme (qp.css), so their text stays
+           dark. Without this they'd inherit the page's text color, which VS Code sets to the theme's foreground. */
+        div.qp-node, .qp-tt {
+            color: black;
+        }
+
         body {
             background: var(--bg-color);
         }
