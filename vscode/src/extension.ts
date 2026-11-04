@@ -136,7 +136,8 @@ class Visualizer {
     }
     const warning = `EFCore Visualizer: ${messageOf(planError)}`;
     void vscode.window.showWarningMessage(warning);
-    return { kind: 'query', ...this.fillTab(key, session.id, expression, fingerprint, queryFile, `Query: ${expression}`), warning };
+    // No fingerprint for the SQL-only page: visualizing the variable again must retry the plan, not just focus this tab.
+    return { kind: 'query', ...this.fillTab(key, session.id, expression, undefined, queryFile, `Query: ${expression}`), warning };
   }
 
   /** Shows the page in the variable's tab, opening one if it has none. */

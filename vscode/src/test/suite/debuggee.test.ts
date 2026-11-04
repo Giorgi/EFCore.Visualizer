@@ -3,8 +3,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { EvaluationError, getPlanFile, getQueryFile, loadHelper } from '../../debuggee';
-import { assetFiles, contentSecurityPolicy } from '../../webview';
+import { csharpString, evaluate, EvaluationError, getPlanFile, getQueryFile, HELPER_TYPE, loadHelper, parseCSharpStringResult } from '../../debuggee';
+import { assetFiles, contentSecurityPolicy, PlanView } from '../../webview';
 import { REFRESH_COMMAND, VISUALIZE_COMMAND, VisualizeResult } from '../../extension';
 
 const extensionRoot = path.resolve(__dirname, '../../..');
@@ -227,6 +227,11 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     assert.doesNotMatch(fallback.warning, /threw an exception/, "the debugger's own wording belongs in the log, not the warning");
     assert.strictEqual(fallback.panel.title, 'Query: broken');
     assert.match(fallback.html, /MissingTable/);
+
+    // Visualizing it again retries the plan (it may have failed for a passing reason) instead of only focusing the tab.
+    const retried = await visualizeVariable('broken');
+    assert.ok(retried?.kind === 'query', `expected the plan to be retried, got ${JSON.stringify(retried)}`);
+    assert.strictEqual(retried.panel, fallback.panel, 'the same tab should be refilled');
     fallback.panel.dispose();
 
     // Neither works: one error that names both causes.
@@ -238,6 +243,83 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
       "EFCore Visualizer: Couldn't get the query plan: Expected an IQueryable but got BloggingContext (Parameter 'query'). " +
         "Couldn't get the SQL either: Expected an IQueryable but got BloggingContext (Parameter 'query').",
     );
+  });
+
+  it('escapes the plan and query for the JavaScript strings of the templates', async () => {
+    // The query and plan contain data (parameter values, literals). Each of these must not end the string or the script.
+    const dangerous = '</script><script>alert(1)</script> \' " ` ${alert(2)} & \\ é';
+    // SQLite builds HTML itself and overrides Encode; every other provider fills JavaScript strings.
+    for (const provider of ['SqlServerDatabaseProvider', 'PostgresDatabaseProvider', 'OracleDatabaseProvider']) {
+      const encoded = parseCSharpStringResult(
+        (await evaluate(session, frameId, `new IQueryableObjectSource.${provider}(null).Encode(${csharpString(dangerous)})`)).result,
+      );
+      console.log(`${provider}.Encode =>`, encoded);
+      assert.doesNotMatch(encoded, /[<>'"`&]/, `${provider} left a character that can end a string or the script`);
+      assert.strictEqual(JSON.parse(`"${encoded}"`), dangerous, `${provider} must keep the value intact`);
+    }
+  });
+
+  it('leaves placeholder text inside the plan alone', async () => {
+    // The plan uses the index "IX_{query}". Filling the placeholders one after the other would put the query into it.
+    const planFile = await getPlanFile(session, frameId, 'postsByTitle');
+    const plan = fs.readFileSync(planFile, 'utf-8');
+    fs.rmSync(planFile, { force: true });
+    assert.match(plan, /SEARCH \w+ USING (COVERING )?INDEX IX_\{query\}/);
+    assert.doesNotMatch(plan, /SELECT/, 'the query must not be put into the plan');
+  });
+
+  it('templates put {plan} and {query} only where they are escaped', () => {
+    // Inside <script>, a placeholder must be a whole "..." or '...' string: Encode doesn't make backtick strings safe,
+    // where ${...} still runs. Outside <script>, {plan} is allowed in any template (a provider that puts its plan into
+    // HTML builds and encodes that HTML itself), but {query} only in Common, the one page that HTML-encodes the query.
+    const allowedOutsideScript = (name: string, placeholder: string) => placeholder === '{plan}' || name === 'Common';
+    const templates = fs.readdirSync(resourcesDir).filter((d) => fs.existsSync(path.join(resourcesDir, d, 'template.html')));
+    assert.ok(templates.length >= 5, `templates found: ${templates.join(', ')}`);
+    for (const name of templates) {
+      const html = fs.readFileSync(path.join(resourcesDir, name, 'template.html'), 'utf-8');
+      const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map((m) => [m.index! + m[0].indexOf(m[1]), m[1].length]);
+      for (const m of html.matchAll(/\{(plan|query)\}/g)) {
+        const inScript = scripts.some(([start, length]) => m.index! >= start && m.index! < start + length);
+        if (inScript) {
+          const quote = html[m.index! - 1];
+          assert.ok((quote === '"' || quote === "'") && html[m.index! + m[0].length] === quote, `${name}: ${m[0]} is not a whole quoted string`);
+        } else {
+          assert.ok(allowedOutsideScript(name, m[0]), `${name}: ${m[0]} outside <script> is not HTML-encoded`);
+        }
+      }
+    }
+  });
+
+  it('webview loads the page assets from a folder with special characters in its path', async () => {
+    // Like an extension under C:\Users\O'Brien: the helper's file: URLs must survive the round trip into the webview.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "EFCore.Visualizer test O'Brien #1 & é "));
+    const page = path.join(os.tmpdir(), `EFCore.Visualizer-test-${path.basename(dir).replace(/\W/g, '')}.html`);
+    let view: PlanView | undefined;
+    try {
+      fs.mkdirSync(path.join(dir, 'sub'));
+      fs.writeFileSync(path.join(dir, 'template.html'), '<html><head><script src="a.js"></script><link rel="stylesheet" href="sub\\b.css"></head><body></body></html>');
+      const html = parseCSharpStringResult((await evaluate(session, frameId, `${HELPER_TYPE}.ReadTemplate(${csharpString(dir)})`)).result);
+      console.log('ReadTemplate =>', html);
+      const expected = [path.join(dir, 'a.js'), path.join(dir, 'sub', 'b.css')];
+      const linked = assetFiles(html);
+      assert.strictEqual(linked.length, expected.length, `assets: ${linked.join(', ')}`);
+      expected.forEach((file, i) => assert.ok(samePath(linked[i], file), `${linked[i]} should be ${file}`));
+
+      fs.writeFileSync(page, html);
+      view = new PlanView('special characters');
+      const webviewHtml = view.show(page, 'special characters');
+      for (const file of expected) {
+        assert.ok(webviewHtml.includes(view.panel.webview.asWebviewUri(vscode.Uri.file(file)).toString(true)), `no webview URI for ${file}`);
+      }
+      const roots = (view.panel.webview.options.localResourceRoots ?? []).map((u) => u.fsPath);
+      for (const folder of [dir, path.join(dir, 'sub')]) {
+        assert.ok(roots.some((r) => samePath(r, folder)), `${folder} not in localResourceRoots: ${roots.join(', ')}`);
+      }
+    } finally {
+      view?.panel.dispose();
+      fs.rmSync(page, { force: true });
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('plan page follows the VS Code theme, not the OS', async () => {

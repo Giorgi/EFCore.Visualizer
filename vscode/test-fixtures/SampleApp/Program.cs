@@ -20,6 +20,8 @@ var minRating = 3;
 var parameterized = context.Blogs.Where(b => b.Rating > minRating);
 // Its SQL can be generated, but the plan fails (the table doesn't exist): the visualizer falls back to the SQL.
 var broken = context.Database.SqlQueryRaw<int>("SELECT Value FROM MissingTable");
+// Its plan names the index "IX_{query}": the placeholder text in the plan must stay as it is.
+var postsByTitle = context.Set<Post>().Where(p => p.Title == "x");
 
 Console.WriteLine(query.Count()); // BREAKPOINT: integration test stops here and inspects `query`
 
@@ -31,7 +33,10 @@ public class BloggingContext : DbContext
         => options.UseSqlite($"Data Source={Path.Combine(AppContext.BaseDirectory, "blogging.db")}");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
-        => modelBuilder.Entity<Blog>().HasIndex(b => b.Rating);
+    {
+        modelBuilder.Entity<Blog>().HasIndex(b => b.Rating);
+        modelBuilder.Entity<Post>().HasIndex(p => p.Title).HasDatabaseName("IX_{query}");
+    }
 }
 
 public class Blog

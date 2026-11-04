@@ -62,9 +62,13 @@ public static class QueryPlanHelper
 
     private static string GeneratePlanFile(DatabaseProvider provider, string query, string rawPlan)
     {
-        var planPageHtml = ReadTemplate(provider.GetPlanDirectory(ResourcesLocation))
-            .Replace("{plan}", provider.Encode(rawPlan))
-            .Replace("{query}", provider.Encode(query));
+        var encodedPlan = provider.Encode(rawPlan);
+        var encodedQuery = provider.Encode(query);
+
+        // One pass, so a "{query}" inside the plan text (a literal, a table name) stays as it is
+        // instead of getting the query put into it.
+        var planPageHtml = Placeholder.Replace(ReadTemplate(provider.GetPlanDirectory(ResourcesLocation)),
+            match => match.Value == "{plan}" ? encodedPlan : encodedQuery);
 
         return WritePage(planPageHtml);
     }
@@ -96,6 +100,8 @@ public static class QueryPlanHelper
         return pageFile;
     }
 
+    private static readonly Regex Placeholder = new(@"\{plan\}|\{query\}");
+
     // <script src="..."> and <link href="..."> in a template.
     private static readonly Regex AssetLink = new(@"(<(?:script|link)\b[^>]*?\b(?:src|href)\s*=\s*"")([^""]*)("")", RegexOptions.IgnoreCase);
 
@@ -118,8 +124,11 @@ public static class QueryPlanHelper
                 return match.Value; // not relative to the template folder
             }
 
+            // AbsoluteUri already percent-encodes '"', '<', '>' and spaces, so only '&' needs escaping in the attribute.
+            // Don't HtmlEncode it: that would turn the "'" of a path like C:\Users\O'Brien into "&#39;", which a
+            // reader that doesn't decode every HTML entity (the VS Code webview) would take for a URL fragment.
             var file = Path.GetFullPath(Path.Combine(templateDirectory, link.Replace('\\', '/')));
-            return match.Groups[1].Value + WebUtility.HtmlEncode(new Uri(file).AbsoluteUri) + match.Groups[3].Value;
+            return match.Groups[1].Value + new Uri(file).AbsoluteUri.Replace("&", "&amp;") + match.Groups[3].Value;
         });
     }
 
