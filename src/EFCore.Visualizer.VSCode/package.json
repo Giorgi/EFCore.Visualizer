@@ -1,5 +1,5 @@
 {
-  "name": "efcore-visualizer",
+  "name": "vscode-efcore-visualizer",
   "displayName": "EFCore Visualizer",
   "description": "View Entity Framework Core query plans while debugging",
   "version": "0.0.1",

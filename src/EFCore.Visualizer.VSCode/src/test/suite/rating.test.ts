@@ -103,9 +103,12 @@ describe('rating prompt', () => {
   });
 
   it('links to the extension\'s Marketplace reviews', () => {
+    // The ID comes from package.json (publisher.name) and is the Marketplace listing's ID. It must stay distinct
+    // from the Visual Studio extension's GiorgiDalakishvili.EFCoreVisualizer, not just differ in case.
+    assert.ok(vscode.extensions.getExtension('GiorgiDalakishvili.vscode-efcore-visualizer'), 'the extension has another ID');
     assert.strictEqual(
-      reviewUrl('GiorgiDalakishvili.efcore-visualizer'),
-      'https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.efcore-visualizer&ssr=false#review-details',
+      reviewUrl('GiorgiDalakishvili.vscode-efcore-visualizer'),
+      'https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.vscode-efcore-visualizer&ssr=false#review-details',
     );
   });
 });
