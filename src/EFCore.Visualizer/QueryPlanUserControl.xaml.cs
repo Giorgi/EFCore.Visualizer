@@ -104,7 +104,8 @@ public partial class QueryPlanUserControl : UserControl
         if (response.HasValue)
         {
             using var stream = response.Value.AsStream();
-            using var binaryReader = new BinaryReader(stream, Encoding.Default);
+            // UTF-8, as the object source writes it (StreamExtensions). Encoding.Default is the ANSI code page here.
+            using var binaryReader = new BinaryReader(stream, Encoding.UTF8);
             var isError = binaryReader.ReadBoolean();
 
             var data = binaryReader.ReadString();
