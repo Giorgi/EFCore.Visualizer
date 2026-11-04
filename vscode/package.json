@@ -26,6 +26,13 @@
         "title": "Visualize Query Plan",
         "category": "EFCore Visualizer",
         "enablement": "inDebugMode && debugState == 'stopped'"
+      },
+      {
+        "command": "efcoreVisualizer.refreshQueryPlan",
+        "title": "Refresh Query Plan",
+        "category": "EFCore Visualizer",
+        "icon": "$(refresh)",
+        "enablement": "inDebugMode && debugState == 'stopped'"
       }
     ],
     "menus": {
@@ -43,10 +50,21 @@
           "group": "z_efcore@1"
         }
       ],
+      "editor/title": [
+        {
+          "command": "efcoreVisualizer.refreshQueryPlan",
+          "when": "activeWebviewPanelId == 'efcoreVisualizer.queryPlan'",
+          "group": "navigation"
+        }
+      ],
       "commandPalette": [
         {
           "command": "efcoreVisualizer.visualizeQuery",
           "when": "debugType == 'coreclr'"
+        },
+        {
+          "command": "efcoreVisualizer.refreshQueryPlan",
+          "when": "activeWebviewPanelId == 'efcoreVisualizer.queryPlan'"
         }
       ]
     }

@@ -15,6 +15,9 @@ var included = context.Blogs.Include(b => b.Posts);
 IEnumerable<Blog> enumerable = query;
 var numbers = new[] { 1, 2, 3 }.AsQueryable();
 var list = query.ToList();
+// Uses a captured variable, which EF sends as a parameter: changing minRating changes the query's SQL.
+var minRating = 3;
+var parameterized = context.Blogs.Where(b => b.Rating > minRating);
 // Its SQL can be generated, but the plan fails (the table doesn't exist): the visualizer falls back to the SQL.
 var broken = context.Database.SqlQueryRaw<int>("SELECT Value FROM MissingTable");
 

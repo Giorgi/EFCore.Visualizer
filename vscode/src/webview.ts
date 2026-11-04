@@ -63,27 +63,43 @@ export function toWebviewHtml(html: string, webview: vscode.Webview, dark: boole
   return addCsp(themed, contentSecurityPolicy(webview.cspSource));
 }
 
-export function showHtmlFile(filePath: string, title: string): { panel: vscode.WebviewPanel; html: string } {
-  try {
-    const source = fs.readFileSync(filePath, 'utf-8');
-    // The webview may read only the folders the page's assets are in.
-    const assetFolders = [...new Set(assetFiles(source).map((f) => path.dirname(f)))];
+export const PLAN_VIEW_TYPE = 'efcoreVisualizer.queryPlan';
 
-    const panel = vscode.window.createWebviewPanel('efcoreVisualizer.queryPlan', title, vscode.ViewColumn.Beside, {
+/**
+ * A plan tab. It can be filled again with a new page (a refreshed plan), and it re-renders when the
+ * VS Code theme changes.
+ */
+export class PlanView {
+  readonly panel: vscode.WebviewPanel;
+  private source = '';
+
+  constructor(title: string) {
+    this.panel = vscode.window.createWebviewPanel(PLAN_VIEW_TYPE, title, vscode.ViewColumn.Beside, {
       enableScripts: true,
-      localResourceRoots: assetFolders.map((f) => vscode.Uri.file(f)),
+      localResourceRoots: [],
       retainContextWhenHidden: true,
     });
-
-    const render = () => (panel.webview.html = toWebviewHtml(source, panel.webview, isDarkTheme(vscode.window.activeColorTheme.kind)));
     // Re-render when the theme changes, so the page doesn't keep the old colors.
-    const themeListener = vscode.window.onDidChangeActiveColorTheme(render);
-    panel.onDidDispose(() => themeListener.dispose());
+    const themeListener = vscode.window.onDidChangeActiveColorTheme(() => this.render());
+    this.panel.onDidDispose(() => themeListener.dispose());
+  }
 
-    const html = render();
-    return { panel, html };
-  } finally {
-    // The page is fully loaded into the webview; nothing references the generated file any more.
-    fs.rmSync(filePath, { force: true });
+  /** Shows the generated page `filePath` (and deletes it), with `title` as the tab's title. Returns the webview HTML. */
+  show(filePath: string, title: string): string {
+    try {
+      this.source = fs.readFileSync(filePath, 'utf-8');
+    } finally {
+      // The page is fully loaded; nothing references the generated file any more.
+      fs.rmSync(filePath, { force: true });
+    }
+    this.panel.title = title;
+    // The webview may read only the folders the page's assets are in.
+    const assetFolders = [...new Set(assetFiles(this.source).map((f) => path.dirname(f)))];
+    this.panel.webview.options = { enableScripts: true, localResourceRoots: assetFolders.map((f) => vscode.Uri.file(f)) };
+    return this.render();
+  }
+
+  private render(): string {
+    return (this.panel.webview.html = toWebviewHtml(this.source, this.panel.webview, isDarkTheme(vscode.window.activeColorTheme.kind)));
   }
 }

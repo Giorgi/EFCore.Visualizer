@@ -23,6 +23,12 @@ Command Palette and type an expression. The menu item appears only when the vari
 `IEnumerable`, ...). The plan opens in a webview beside the editor. If the plan can't be produced,
 the error is shown and the SQL is displayed instead, as in Visual Studio.
 
+Each variable gets its own tab, so plans can be compared side by side. Visualizing the same variable again
+brings its tab to the front. If the query changed in between (another `Where` or `OrderBy`, a different query
+assigned, or a different parameter value), the tab gets a fresh plan; the extension compares the query's SQL,
+parameter values included, which it can generate without running the query. Changes the SQL doesn't show,
+such as new data, need the tab's **Refresh** button. When the debug session ends, its tabs stay open as they are.
+
 ## Integration test
 
 `src/test/suite/debuggee.test.ts` runs in a real VS Code (`@vscode/test-electron`) with

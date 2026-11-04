@@ -5,7 +5,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { EvaluationError, getPlanFile, getQueryFile, loadHelper } from '../../debuggee';
 import { assetFiles, contentSecurityPolicy } from '../../webview';
-import { VISUALIZE_COMMAND, VisualizeResult } from '../../extension';
+import { REFRESH_COMMAND, VISUALIZE_COMMAND, VisualizeResult } from '../../extension';
 
 const extensionRoot = path.resolve(__dirname, '../../..');
 const workspace = process.env.EFCORE_VISUALIZER_TEST_WORKSPACE ?? path.join(extensionRoot, 'test-fixtures/SampleApp');
@@ -301,6 +301,65 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     }
     for (const name of ['context', 'numbers', 'list']) {
       assert.doesNotMatch(types[name] ?? '', typeFilter, `${name} should not get the menu item`);
+    }
+  });
+
+  // Last: it ends the debug session.
+  it('one tab per variable: focused when its query is unchanged, refreshed when it changed', async () => {
+    const evaluate = async (expression: string) =>
+      (await session.customRequest('evaluate', { expression, frameId, context: 'repl' })).result as string;
+    const panels: vscode.WebviewPanel[] = [];
+    try {
+      const first = await visualizeVariable('parameterized');
+      assert.ok(first?.kind === 'plan', `expected a plan, got ${JSON.stringify(first)}`);
+      const tab = first.panel;
+      panels.push(tab);
+
+      // Same variable, same query: the tab is only brought to the front; nothing is generated.
+      const pagesBefore = generatedPages();
+      const again = await visualizeVariable('parameterized');
+      assert.ok(again?.kind === 'unchanged', `expected the same tab unchanged, got ${JSON.stringify(again)}`);
+      assert.strictEqual(again.panel, tab);
+      assert.deepStrictEqual(generatedPages(), pagesBefore);
+
+      // Another variable gets its own tab, so plans can be compared side by side.
+      const other = await visualizeVariable('query');
+      assert.ok(other?.kind === 'plan', `expected a plan, got ${JSON.stringify(other)}`);
+      panels.push(other.panel);
+      assert.notStrictEqual(other.panel, tab);
+
+      // Only a parameter value changes: same tab, refreshed.
+      assert.strictEqual(await evaluate('minRating = 5'), '5');
+      const changedParameter = await visualizeVariable('parameterized');
+      assert.ok(changedParameter?.kind === 'plan', `expected a refreshed plan, got ${JSON.stringify(changedParameter)}`);
+      assert.strictEqual(changedParameter.panel, tab, 'the same tab should be refreshed');
+      assert.strictEqual(tab.title, 'Query Plan: parameterized');
+
+      // A different query is assigned to the variable: same tab, refreshed.
+      await evaluate('parameterized = blogs');
+      const newQuery = await visualizeVariable('parameterized');
+      assert.ok(newQuery?.kind === 'plan', `expected a refreshed plan, got ${JSON.stringify(newQuery)}`);
+      assert.strictEqual(newQuery.panel, tab);
+      assert.match(newQuery.html, /SCAN/, 'the DbSet has no filter, so SQLite scans the table');
+      assert.strictEqual((await visualizeVariable('parameterized'))?.kind, 'unchanged');
+
+      // The tab's Refresh button gets the plan again even though the query is the same.
+      tab.reveal(undefined, false);
+      await waitFor(() => (tab.active ? true : undefined), 'the plan tab to become active');
+      const refreshed = await vscode.commands.executeCommand<VisualizeResult | undefined>(REFRESH_COMMAND);
+      assert.ok(refreshed?.kind === 'plan', `expected a refreshed plan, got ${JSON.stringify(refreshed)}`);
+      assert.strictEqual(refreshed.panel, tab);
+
+      // Once the session has ended, the tab stays open but can't be refreshed.
+      await vscode.debug.stopDebugging(session);
+      await waitFor(() => (vscode.debug.activeDebugSession ? undefined : true), 'the debug session to end');
+      tab.reveal(undefined, false);
+      await waitFor(() => (tab.active ? true : undefined), 'the plan tab to become active');
+      const ended = await vscode.commands.executeCommand<VisualizeResult | undefined>(REFRESH_COMMAND);
+      assert.ok(ended?.kind === 'error', `expected an error, got ${JSON.stringify(ended)}`);
+      assert.match(ended.message, /debug session of this plan has ended/);
+    } finally {
+      panels.forEach((p) => p.dispose());
     }
   });
 });
