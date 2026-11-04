@@ -20,17 +20,11 @@ namespace IQueryableObjectSource;
 /// </summary>
 public static class QueryPlanHelper
 {
-    private static string resourcesLocation = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(typeof(QueryPlanHelper).Assembly.Location)), "Resources");
-
     /// <summary>
-    /// Folder that contains the Common/SqlServer/Postgres/Oracle/SQLite template folders.
-    /// Defaults to <c>../Resources</c> relative to this assembly.
+    /// Folder that contains the template folders (Common, SqlServer, Postgres, Oracle, SQLite):
+    /// <c>../Resources</c> relative to this assembly.
     /// </summary>
-    public static string ResourcesLocation
-    {
-        get => resourcesLocation;
-        set => resourcesLocation = value;
-    }
+    private static readonly string ResourcesLocation = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(typeof(QueryPlanHelper).Assembly.Location)), "Resources");
 
     /// <summary>Generates an HTML page with the SQL of <paramref name="query"/> and returns its path.</summary>
     public static string GetQueryFile(object query) => GenerateQueryFile(AsQueryable(query).ToQueryString());
