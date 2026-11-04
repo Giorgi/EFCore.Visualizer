@@ -417,6 +417,25 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     }
   });
 
+  it('visualizes typed expressions with method calls; vsdbg builds no expression tree that reads a property', async () => {
+    // As typed into the Command Palette's input box: the expression reaches the command as evaluateName.
+    const take = await visualizeVariable('context.Posts.Take(5)');
+    try {
+      assert.ok(take?.kind === 'plan', `expected a plan, got ${JSON.stringify(take)}`);
+    } finally {
+      if (take && 'panel' in take) {
+        take.panel.dispose();
+      }
+    }
+    // vsdbg interprets lambdas (a delegate works, and so does an expression tree without property access), but it
+    // can't build an expression tree that reads a property, which every useful EF filter or sort does. If this
+    // starts to work, update the README's note on typed expressions.
+    assert.strictEqual((await evaluate(session, frameId, 'list.Count(b => b.Rating > 3)')).type, 'int');
+    const lambda = await visualizeVariable('context.Blogs.Where(b => b.Rating > 3)');
+    assert.ok(lambda?.kind === 'error', `the lambda evaluates now: update the README. Got ${JSON.stringify(lambda)}`);
+    assert.match(lambda.message, /unable to evaluate this expression/);
+  });
+
   it('Copy SQL copies the query with its parameters, also long SQL and from the SQL-only page', async () => {
     // Some environments (sandboxes, some remote sessions) don't keep what is written to the system clipboard.
     // There the test checks only the text the command copied, which is what it wrote to the clipboard.

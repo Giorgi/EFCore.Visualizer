@@ -28,7 +28,9 @@ The plan opens in a tab beside the editor. The menu item appears only on EF Core
 variable's declared type (`IQueryable`, `IOrderedQueryable`, `IEnumerable`, ...).
 
 You can also run **EFCore Visualizer: Visualize Query Plan** from the Command Palette and type an expression
-that returns a query, such as `query` or `context.Blogs`.
+that returns a query, such as `query`, `context.Blogs` or `context.Posts.Take(5)`. Lambdas that read a property,
+such as `Where(b => b.Rating > 3)` or `OrderBy(b => b.Url)`, don't work there: the debugger can't turn them into
+the expression trees EF Core needs. Put such a query in a variable in your code instead.
 
 ### Tabs
 
