@@ -51,6 +51,8 @@ export class RatingPrompt {
    * prompt itself, if any, isn't waited for.
    */
   async planShown(): Promise<void> {
+    // No await between reading the count and writing it: Memento.update changes the stored value at once (only the
+    // save to disk is asynchronous), so plans that finish at the same moment still count one after the other.
     const current = this.read();
     const plans = current.plans + 1;
     if (current.nextAsk === undefined || plans < current.nextAsk || this.askedThisSession) {

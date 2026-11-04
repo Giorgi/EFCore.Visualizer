@@ -45,6 +45,11 @@ extension compatible with it (2.50.x), in separate `.vscode-test/extensions-1.90
 folders. CI runs both. Older vsdbg versions differ: for example, they don't flag an exception thrown by an
 evaluation as `failedEvaluation` (see `evaluate` in `debuggee.ts`).
 
+Every test run installs the newest C# extension from the Marketplace (for the VS Code version tested), on purpose:
+it tests what users get. So a CI run can fail without a commit here, when a new C# extension or vsdbg changes
+behaviour. Check the installed version in the log first: `Extension 'ms-dotnettools.csharp' v… was successfully
+installed.` (Locally, where `.vscode-test` already has it, the line is `… is already installed.`, without a version.)
+
 **On Windows, keep the checkout path short** (like `S:\src\EFCore.Visualizer`). Deep paths go past the 260-character
 limit inside `.vscode-test`, and the C# extension's signature check, ripgrep and vsdbg then fail with `ENOENT`.
 
@@ -131,7 +136,8 @@ Details that matter when changing this:
 - **Don't add `extensionDependencies`** on the C# extension. Forks without it couldn't install the extension at all.
 - **Code in `../EFCore.Visualizer.Core` is shared with Visual Studio.** A change there changes the VS visualizer
   too: build the VSIX as well (see the root `AGENTS.md`). Keep that code free of Visual Studio types.
-- Templates put `{plan}` and `{query}` only inside double-quoted JavaScript strings. A test checks this.
+- Templates put `{plan}` and `{query}` only inside quoted JavaScript strings (`"…"` or `'…'`), never in a backtick
+  string, where `${…}` would still run. A test checks this.
 - The debuggee and VS Code must share a file system (the helper DLL and the generated page are passed by path).
 
 ## Testing

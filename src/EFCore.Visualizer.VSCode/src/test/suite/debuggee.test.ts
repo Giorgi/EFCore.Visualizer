@@ -5,7 +5,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { csharpString, evaluate, EvaluationError, getPlanFile, getQueryFile, HELPER_TYPE, loadHelper, parseCSharpStringResult } from '../../debuggee';
 import { assetFiles, contentSecurityPolicy, PlanView } from '../../webview';
-import { COPY_SQL_COMMAND, REFRESH_COMMAND, VISUALIZE_COMMAND, VisualizeResult } from '../../extension';
+import { COPY_SQL_COMMAND, REFRESH_COMMAND, VISUALIZE_COMMAND, VisualizeResult, withoutFormatSpecifiers } from '../../extension';
 
 const extensionRoot = path.resolve(__dirname, '../../..');
 const workspace = process.env.EFCORE_VISUALIZER_TEST_WORKSPACE ?? path.join(extensionRoot, '../../samples/SampleApp');
@@ -434,6 +434,40 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     const lambda = await visualizeVariable('context.Blogs.Where(b => b.Rating > 3)');
     assert.ok(lambda?.kind === 'error', `the lambda evaluates now: update the README. Got ${JSON.stringify(lambda)}`);
     assert.match(lambda.message, /unable to evaluate this expression/);
+  });
+
+  it('a second click while the plan is still being retrieved waits for it instead of running the query again', async () => {
+    const title = 'Query Plan: activeBlogs';
+    const tabsTitled = () =>
+      vscode.window.tabGroups.all.flatMap((g) => g.tabs).filter((t) => t.label === title).length;
+    const [first, second] = await Promise.all([visualizeVariable('activeBlogs'), visualizeVariable('activeBlogs')]);
+    try {
+      assert.ok(first?.kind === 'plan', `expected a plan, got ${JSON.stringify(first)}`);
+      assert.strictEqual(second, first, 'the second click should get the same result, not a run of its own');
+      // VS Code lists a new webview tab a moment after it opens.
+      await waitFor(() => (tabsTitled() > 0 ? true : undefined), 'the plan tab to be listed');
+      assert.strictEqual(tabsTitled(), 1, 'one tab for the variable');
+    } finally {
+      if (first && 'panel' in first) {
+        first.panel.dispose();
+      }
+    }
+  });
+
+  it('ignores debugger format specifiers at the end of a watch expression', async () => {
+    assert.strictEqual(withoutFormatSpecifiers('query, nq'), 'query');
+    assert.strictEqual(withoutFormatSpecifiers('context.Blogs ,nq, raw'), 'context.Blogs');
+    assert.strictEqual(withoutFormatSpecifiers('Foo(a, d)'), 'Foo(a, d)', 'arguments are not format specifiers');
+    assert.strictEqual(withoutFormatSpecifiers('query'), 'query');
+    const result = await visualizeVariable('postsByTitle, nq');
+    try {
+      assert.ok(result?.kind === 'plan', `expected a plan, got ${JSON.stringify(result)}`);
+      assert.strictEqual(result.panel.title, 'Query Plan: postsByTitle');
+    } finally {
+      if (result && 'panel' in result) {
+        result.panel.dispose();
+      }
+    }
   });
 
   it('Copy SQL copies the query with its parameters, also long SQL and from the SQL-only page', async () => {

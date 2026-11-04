@@ -53,7 +53,9 @@ app, on your app's connection and transaction:
 
 * Getting the plan takes as long as the query. A notification shows the elapsed time.
 * It can't be cancelled. Your app stays paused until the query finishes.
-* There's no time limit, unlike Visual Studio, where plans that take more than about 5 seconds fail.
+* The debugger sets no time limit, unlike Visual Studio, where plans that take more than about 5 seconds fail.
+  The query is still limited by your app's database command timeout: 30 seconds by default for SQL Server and
+  PostgreSQL.
 
 For SQLite, the extension only asks for the estimated plan (`EXPLAIN QUERY PLAN`), so the query doesn't run.
 

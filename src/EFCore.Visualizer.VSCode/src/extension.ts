@@ -51,6 +51,8 @@ class Visualizer {
   private readonly openTabs = new Set<PlanTab>();
   /** The tab that most recently got the focus (see activeTab). */
   private lastFocusedTab: PlanTab | undefined;
+  /** Visualizations still running, by session and expression (see show). */
+  private readonly running = new Map<string, Promise<VisualizeResult>>();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -78,10 +80,11 @@ class Visualizer {
   /** Visualize Query Plan, from the Variables or Watch context menu (`arg`) or the Command Palette. */
   async visualize(arg?: VariableContext): Promise<VisualizeResult | undefined> {
     return this.reportErrors(async () => {
-      const { session, frameId } = await currentFrame(arg?.sessionId, 'Pause the debugger and select a stack frame first.');
-      const expression =
+      const { session, frameId } = await currentFrame(arg?.sessionId, 'Select a stack frame in the debug session of that variable.');
+      const typed =
         arg?.variable?.evaluateName ??
         (await vscode.window.showInputBox({ prompt: 'IQueryable expression to visualize', placeHolder: 'query' }));
+      const expression = typed && withoutFormatSpecifiers(typed);
       if (!expression) {
         return undefined;
       }
@@ -101,14 +104,29 @@ class Visualizer {
     });
   }
 
-  private async show(session: vscode.DebugSession, frameId: number, expression: string, refresh: boolean): Promise<VisualizeResult> {
+  /**
+   * Shows the plan of `expression`. If it's already being retrieved (a second click while SQL Server, PostgreSQL or
+   * Oracle still runs the query), this waits for that run instead of starting another: the query would run twice,
+   * and a second tab would open for the same variable.
+   */
+  private show(session: vscode.DebugSession, frameId: number, expression: string, refresh: boolean): Promise<VisualizeResult> {
+    const key = `${session.id}\n${expression}`;
+    const running = this.running.get(key);
+    if (running) {
+      return running;
+    }
+    const run = this.showNow(session, frameId, expression, key, refresh).finally(() => this.running.delete(key));
+    this.running.set(key, run);
+    return run;
+  }
+
+  private async showNow(session: vscode.DebugSession, frameId: number, expression: string, key: string, refresh: boolean): Promise<VisualizeResult> {
     if (session.type !== 'coreclr') {
       throw new Error(`EFCore Visualizer needs a .NET (coreclr) debug session, not "${session.type}".`);
     }
     await loadHelper(session, frameId, helperAssemblyPath(this.context));
 
     // If the variable already has a tab and its SQL (parameter values included) is the same, that tab is up to date.
-    const key = `${session.id}\n${expression}`;
     const existing = this.tabsByVariable.get(key);
     let sql: string | undefined;
     try {
@@ -244,10 +262,14 @@ class Visualizer {
   }
 }
 
-async function currentFrame(sessionId: string | undefined, notSelected: string): Promise<{ session: vscode.DebugSession; frameId: number }> {
+/** The selected stack frame. `otherSession`: the error when it belongs to another session than `sessionId`. */
+async function currentFrame(sessionId: string | undefined, otherSession: string): Promise<{ session: vscode.DebugSession; frameId: number }> {
   const item = vscode.debug.activeStackItem;
-  if (!item || (sessionId && item.session.id !== sessionId)) {
-    throw new Error(notSelected);
+  if (!item) {
+    throw new Error('Pause the debugger and select a stack frame first.');
+  }
+  if (sessionId && item.session.id !== sessionId) {
+    throw new Error(otherSession);
   }
   if (item instanceof vscode.DebugStackFrame) {
     return { session: item.session, frameId: item.frameId };
@@ -259,6 +281,17 @@ async function currentFrame(sessionId: string | undefined, notSelected: string):
     throw new Error('The selected thread has no stack frames.');
   }
   return { session: item.session, frameId: frame.id };
+}
+
+/**
+ * A watch expression can end in debugger format specifiers, such as "query, nq". They aren't C#, and the expression is
+ * passed to a method call, so they're removed. Only known specifiers after the last top-level comma are removed: a
+ * C# expression can't end in ", nq" any other way.
+ */
+const FORMAT_SPECIFIERS = /(\s*,\s*(?:nq|nse|ac|d|h|raw|results|dynamic|hidden))+\s*$/;
+
+export function withoutFormatSpecifiers(expression: string): string {
+  return expression.replace(FORMAT_SPECIFIERS, '').trim();
 }
 
 /** Ends `text` with a period unless it already ends a sentence, so two messages can be joined. */
