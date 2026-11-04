@@ -79,7 +79,10 @@ Details that matter when changing this:
   when that code returns, and afterwards vsdbg refuses method calls until the user steps or continues.
 - **Menu item:** the `when` clause matches the variable's runtime type (`EntityQueryable`, `IncludableQueryable`,
   `InternalDbSet`). vsdbg reports types as `Declared {Runtime}`, and variable names with a type suffix, such as
-  `query [IOrderedQueryable]`. VS Code sets `variableType` in the Variables and Watch context menus.
+  `query [IOrderedQueryable]`. VS Code sets `variableType` in the Variables and Watch context menus (Watch
+  only in recent versions). Each view has the command twice: in the context menu and as an `inline` button on the
+  row. In Watch, a top-level watch expression has `variableEvaluateNamePresent` false, so its condition also
+  accepts `watchItemType == 'expression'`; VS Code still passes the expression's text as `variable.evaluateName`.
 - **Fallback:** only the plan retrieval is caught. If the plan fails, the SQL page is shown with a short warning.
   That tab gets no fingerprint, so visualizing the variable again retries the plan. If the SQL also fails, one error
   reports both. Full errors go to the "EFCore Visualizer" log output channel.

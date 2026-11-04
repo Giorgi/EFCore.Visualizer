@@ -350,10 +350,18 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
   it('shows Visualize Query Plan only on EF Core queries and DbSets', async () => {
     // The variableType clause of the Variables/Watch menu entries in package.json.
     const pkg = JSON.parse(fs.readFileSync(path.join(extensionRoot, 'package.json'), 'utf-8'));
-    const whens: string[] = ['debug/variables/context', 'debug/watch/context'].map(
-      (menu) => pkg.contributes.menus[menu].find((m: { command: string }) => m.command === VISUALIZE_COMMAND).when,
+    // In both views: the context menu item, and the inline button on the variable's row.
+    const entries: { command: string; when: string; group: string }[] = ['debug/variables/context', 'debug/watch/context'].flatMap(
+      (menu) => pkg.contributes.menus[menu].filter((m: { command: string }) => m.command === VISUALIZE_COMMAND),
     );
-    assert.strictEqual(whens[0], whens[1], 'Variables and Watch menus should use the same condition');
+    assert.deepStrictEqual(entries.map((e) => e.group), ['z_efcore@1', 'inline', 'z_efcore@1', 'inline']);
+    // Watch: a top-level watch expression has no evaluateName of its own (VS Code passes its text as evaluateName
+    // to the command), so variableEvaluateNamePresent is false there; watchItemType == 'expression' covers it.
+    const whens = entries.map((e) => e.when);
+    const watchWhen = whens[0].replace('variableEvaluateNamePresent', "(variableEvaluateNamePresent || watchItemType == 'expression')");
+    assert.deepStrictEqual(whens, [whens[0], whens[0], watchWhen, watchWhen], 'each view should use one condition for its menu item and button');
+    const visualize = pkg.contributes.commands.find((c: { command: string }) => c.command === VISUALIZE_COMMAND);
+    assert.match(visualize.icon ?? '', /^\$\(.+\)$/, 'an inline button needs an icon');
     const clause = /variableType =~ \/(.+?)\/(\s|$)/.exec(whens[0]);
     assert.ok(clause, `no variableType clause in: ${whens[0]}`);
     const typeFilter = new RegExp(clause[1]);

@@ -25,7 +25,8 @@
         "command": "efcoreVisualizer.visualizeQuery",
         "title": "Visualize Query Plan",
         "category": "EFCore Visualizer",
-        "enablement": "inDebugMode && debugState == 'stopped'"
+        "enablement": "inDebugMode && debugState == 'stopped'",
+        "icon": "$(graph)"
       },
       {
         "command": "efcoreVisualizer.refreshQueryPlan",
@@ -41,13 +42,23 @@
           "command": "efcoreVisualizer.visualizeQuery",
           "when": "debugType == 'coreclr' && variableEvaluateNamePresent && variableType =~ /EntityQueryable|IncludableQueryable|InternalDbSet/",
           "group": "z_efcore@1"
+        },
+        {
+          "command": "efcoreVisualizer.visualizeQuery",
+          "when": "debugType == 'coreclr' && variableEvaluateNamePresent && variableType =~ /EntityQueryable|IncludableQueryable|InternalDbSet/",
+          "group": "inline"
         }
       ],
       "debug/watch/context": [
         {
           "command": "efcoreVisualizer.visualizeQuery",
-          "when": "debugType == 'coreclr' && variableEvaluateNamePresent && variableType =~ /EntityQueryable|IncludableQueryable|InternalDbSet/",
+          "when": "debugType == 'coreclr' && (variableEvaluateNamePresent || watchItemType == 'expression') && variableType =~ /EntityQueryable|IncludableQueryable|InternalDbSet/",
           "group": "z_efcore@1"
+        },
+        {
+          "command": "efcoreVisualizer.visualizeQuery",
+          "when": "debugType == 'coreclr' && (variableEvaluateNamePresent || watchItemType == 'expression') && variableType =~ /EntityQueryable|IncludableQueryable|InternalDbSet/",
+          "group": "inline"
         }
       ],
       "editor/title": [

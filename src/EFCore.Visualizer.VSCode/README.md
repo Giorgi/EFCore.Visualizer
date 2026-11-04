@@ -21,8 +21,8 @@ which can't run the calls the extension needs.
 ## Usage
 
 1. Debug your app and pause it, for example at a breakpoint, where a query is in scope.
-2. In **Variables** or **Watch**, right-click the query (an `IQueryable` from EF Core, or a `DbSet`) and choose
-   **Visualize Query Plan**.
+2. In **Variables** or **Watch**, hover over the query (an `IQueryable` from EF Core, or a `DbSet`) and click the
+   **Visualize Query Plan** button at the end of its row. Or right-click it and choose **Visualize Query Plan**.
 
 The plan opens in a tab beside the editor. The menu item appears only on EF Core queries, whatever the
 variable's declared type (`IQueryable`, `IOrderedQueryable`, `IEnumerable`, ...).
