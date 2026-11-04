@@ -2,7 +2,7 @@
 
 # Entity Framework Core Query Plan Visualizer
 
-View Entity Framework Core query plan directly inside Visual Studio.
+View Entity Framework Core query plan directly inside Visual Studio and VS Code.
 
 [![Visual Studio Marketplace Version](https://badgen.net/vs-marketplace/v/GiorgiDalakishvili.EFCoreVisualizer?label=Download%20Now&color=purple)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
 [![Visual Studio Marketplace Downloads](https://badgen.net/vs-marketplace/d/GiorgiDalakishvili.EFCoreVisualizer)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
@@ -61,7 +61,13 @@ The query plan includes Actual IO stats, Outline data, Projections, and Predicat
 ![Oracle Plan](doc/OraclePlan1.png)
 ![Oracle Plan](doc/OraclePlan2.png)
 
-## Known Issues:
+## Visual Studio Code
+
+The visualizer is also available for VS Code. While you debug with Microsoft's C# extension, right-click a query in **Variables** or **Watch** and choose **Visualize Query Plan**. The plan opens in a tab beside the editor, with the same plan pages as in Visual Studio. It requires **VS Code 1.90 or newer** and supports **EF Core 7 or newer**.
+
+See the VS Code extension's [README](src/EFCore.Visualizer.VSCode/README.md) for details.
+
+## Known Issues (Visual Studio):
 
  - If query plan extraction takes more than 5 seconds, you will get [Evaluation timed out error](https://github.com/Giorgi/EFCore.Visualizer/issues/25)
  - If your project uses Application Insights, you might get [Cannot evaluate expression since the function evaluation requires all threads to run.](https://github.com/Giorgi/EFCore.Visualizer/issues/28) when viewing query plan. **Workaround** - disable Application Insights when running your project with a debugger attached.
@@ -69,4 +75,4 @@ The query plan includes Actual IO stats, Outline data, Projections, and Predicat
 ## Credits
 
 This extension uses [pev2](https://github.com/dalibo/pev2/), [html-query-plan](https://github.com/JustinPealing/html-query-plan) and 
-[Treeflex](https://dumptyd.github.io/treeflex/) to display query plans.
+[Treeflex](https://dumptyd.github.io/treeflex/) to display query plans, and [highlight.js](https://highlightjs.org/) to highlight SQL.

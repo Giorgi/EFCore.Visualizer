@@ -1,56 +1,77 @@
-# EFCore Visualizer for VS Code (spike)
+# EFCore Visualizer for VS Code
 
-Port of the Visual Studio visualizer. Instead of the VS-only `VisualizerObjectSource`, it talks to the
-debuggee through plain DAP `evaluate` requests against the C# extension's `coreclr` debugger (vsdbg):
+View the execution plan of an Entity Framework Core query while you debug, without leaving VS Code.
+Supports SQL Server, PostgreSQL, Oracle and SQLite.
 
-1. `System.Reflection.Assembly.LoadFrom(@"<extension>/dist/netcoreapp/EFCore.Visualizer.Core.dll")`
-2. `IQueryableObjectSource.QueryPlanHelper.GetPlanFile(query)` → path of the generated HTML plan page
+This is the VS Code version of the [EFCore Visualizer](https://github.com/Giorgi/EFCore.Visualizer) for
+Visual Studio. It shows the same plan pages.
 
-`EFCore.Visualizer.Core` (in `..`) is the code shared with the Visual Studio visualizer, and it has no
-`Microsoft.VisualStudio.DebuggerVisualizers` dependency. The page templates are in its `Resources` folder.
+<!-- TODO: screenshot of a plan tab in VS Code -->
+
+## Requirements
+
+* VS Code 1.90 or newer.
+* Microsoft's [C# extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
+  (`ms-dotnettools.csharp`), which provides the .NET debugger.
+* An app that uses EF Core 7 or newer, on .NET 6 or newer.
+
+VS Code forks such as Cursor or VSCodium aren't supported yet. They use a different .NET debugger (netcoredbg),
+which can't run the calls the extension needs.
 
 ## Usage
 
-It needs a debugger that provides the `coreclr` debug type, such as the C# extension
-(`ms-dotnettools.csharp`). It doesn't declare a dependency on it, because editors other than VS Code may not
-use vsdbg; whether netcoredbg can run these evaluations is not tested yet.
+1. Debug your app and pause it, for example at a breakpoint, where a query is in scope.
+2. In **Variables** or **Watch**, right-click the query (an `IQueryable` from EF Core, or a `DbSet`) and choose
+   **Visualize Query Plan**.
 
-While a .NET (`coreclr`) session is paused, right-click an EF Core query or `DbSet` in **Variables**
-or **Watch** and choose **Visualize Query Plan**, or run *EFCore Visualizer: Visualize Query Plan* from the
-Command Palette and type an expression. The menu item appears only when the variable's runtime type is
-`EntityQueryable`, `IncludableQueryable` or `InternalDbSet`, whatever its declared type (`IOrderedQueryable`,
-`IEnumerable`, ...). The plan opens in a webview beside the editor. If the plan can't be produced,
-the error is shown and the SQL is displayed instead, as in Visual Studio.
+The plan opens in a tab beside the editor. The menu item appears only on EF Core queries, whatever the
+variable's declared type (`IQueryable`, `IOrderedQueryable`, `IEnumerable`, ...).
 
-Each variable gets its own tab, so plans can be compared side by side. Visualizing the same variable again
-brings its tab to the front. If the query changed in between (another `Where` or `OrderBy`, a different query
-assigned, or a different parameter value), the tab gets a fresh plan; the extension compares the query's SQL,
-parameter values included, which it can generate without running the query. Changes the SQL doesn't show,
-such as new data, need the tab's **Refresh** button. When the debug session ends, its tabs stay open as they are.
+You can also run **EFCore Visualizer: Visualize Query Plan** from the Command Palette and type an expression
+that returns a query, such as `query` or `context.Blogs`.
 
-## Integration test
+### Tabs
 
-`src/test/suite/debuggee.test.ts` runs in a real VS Code (`@vscode/test-electron`) with
-`ms-dotnettools.csharp` installed, debugs `test-fixtures/SampleApp` (EF Core 8 + SQLite), stops at the
-`// BREAKPOINT` line and:
+* Each variable gets its own tab, so you can compare plans side by side.
+* Visualizing the same variable again brings its tab to the front. If the query changed in the meantime (another
+  `Where` or `OrderBy`, a new query assigned, a different parameter value), the tab gets the new plan.
+* The **Refresh** button in the tab's title bar gets the plan again even if the query didn't change, for example
+  after the data changed.
+* When the debug session ends, its tabs stay open.
 
-* performs the two evaluations above (plus `GetQueryFile` and a func-eval exception case);
-* invokes the command with the same argument the Variables context menu passes and checks the webview HTML.
+The page follows the VS Code color theme.
 
-Requires the .NET 8 SDK on `PATH`.
+## Important: the query runs
 
-```sh
-npm ci
-npm run pretest            # tsc + build helper into dist/ + build the sample app
-npm test                   # Linux without a display: xvfb-run -a npm test --ignore-scripts
-```
+For SQL Server, PostgreSQL and Oracle, the extension shows the *actual* plan, so it **runs the query** in your
+app, on your app's connection and transaction:
 
-## Known gaps (spike)
+* Getting the plan takes as long as the query. A notification shows the elapsed time.
+* It can't be cancelled. Your app stays paused until the query finishes.
+* There's no time limit, unlike Visual Studio, where plans that take more than about 5 seconds fail.
 
-* The debuggee loads the helper from the extension's `dist/` folder and writes pages to its temp folder,
-  which the extension then reads. This assumes the debuggee and the extension host share a file system
-  (true locally and for Remote-SSH/containers where the C# extension runs remotely; not for e.g.
-  `pipeTransport` remote debugging).
-* The integration test covers SQLite only (on Linux and Windows). The SQL Server, Postgres and Oracle pages
-  were checked in Edge with sample plans, under the same Content-Security-Policy, but not in a real webview.
-* No packaging (`vsce`) or Marketplace metadata yet.
+For SQLite, the extension only asks for the estimated plan (`EXPLAIN QUERY PLAN`), so the query doesn't run.
+
+## When there's no plan
+
+If the extension can't get the plan, a short warning says why, and the tab shows the query's SQL instead.
+Visualizing the variable again tries the plan again. The full error is in the **EFCore Visualizer** output channel
+(**View > Output**).
+
+## Known issues
+
+* There's no visualizer icon in the debug hover or next to the variable, as in Visual Studio. VS Code's API for
+  that is still a proposal ([microsoft/vscode#197287](https://github.com/microsoft/vscode/issues/197287)), so
+  the extension uses the context menu instead.
+* Your app must see the same file system as VS Code. It loads a helper DLL from the extension's folder and
+  writes the plan page to its temp folder, where the extension reads it. That works for local debugging;
+  remote setups (Remote-SSH, containers, WSL) haven't been tested.
+* If your app uses Application Insights, getting the plan can fail with "Cannot evaluate expression since the
+  function evaluation requires all threads to run". The same happens in Visual Studio
+  ([#28](https://github.com/Giorgi/EFCore.Visualizer/issues/28)). Disable Application Insights while debugging.
+
+## Credits
+
+The plan pages use [pev2](https://github.com/dalibo/pev2/),
+[html-query-plan](https://github.com/JustinPealing/html-query-plan),
+[Treeflex](https://dumptyd.github.io/treeflex/) and [highlight.js](https://highlightjs.org/).
