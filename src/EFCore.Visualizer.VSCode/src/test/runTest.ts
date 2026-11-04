@@ -5,7 +5,7 @@ import { downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath, runTest
 async function main(): Promise<void> {
   const extensionDevelopmentPath = path.resolve(__dirname, '../..');
   const extensionTestsPath = path.resolve(__dirname, './suite/index');
-  const workspace = path.resolve(extensionDevelopmentPath, 'test-fixtures/SampleApp');
+  const workspace = path.resolve(extensionDevelopmentPath, '../../samples/SampleApp');
   const userDataDir = path.resolve(extensionDevelopmentPath, '.vscode-test/user-data');
   const extensionsDir = path.resolve(extensionDevelopmentPath, '.vscode-test/extensions');
 

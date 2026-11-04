@@ -1,0 +1,20 @@
+{
+  "profiles": {
+    "SQLite": {
+      "commandName": "Project",
+      "commandLineArgs": "sqlite"
+    },
+    "SQL Server": {
+      "commandName": "Project",
+      "commandLineArgs": "sqlserver"
+    },
+    "PostgreSQL": {
+      "commandName": "Project",
+      "commandLineArgs": "postgres"
+    },
+    "Oracle": {
+      "commandName": "Project",
+      "commandLineArgs": "oracle"
+    }
+  }
+}

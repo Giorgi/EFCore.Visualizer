@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Experimental Instance + SampleApp": {
+      "commandName": "Executable",
+      "executablePath": "$(DevEnvDir)devenv.exe",
+      "commandLineArgs": "/rootSuffix Exp \"$(MSBuildProjectDirectory)\\..\\..\\..\\samples\\SampleApp\\SampleApp.slnx\""
+    },
+    "Experimental Instance": {
+      "commandName": "Executable",
+      "executablePath": "$(DevEnvDir)devenv.exe",
+      "commandLineArgs": "/rootSuffix Exp"
+    }
+  }
+}

@@ -2,6 +2,4 @@ node_modules/
 out/
 dist/
 .vscode-test/
-test-fixtures/**/bin/
-test-fixtures/**/obj/
 *.vsix

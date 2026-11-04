@@ -1,0 +1,13 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Same steps as "npm run pretest": TypeScript, the helper DLL and templates in dist/, the sample app.
+      "label": "build",
+      "type": "npm",
+      "script": "pretest",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$tsc"]
+    }
+  ]
+}

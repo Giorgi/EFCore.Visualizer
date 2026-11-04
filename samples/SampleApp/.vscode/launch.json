@@ -1,0 +1,48 @@
+{
+  // Debugs the sample app with the C# extension, one configuration per database. Set a breakpoint on the
+  // "// BREAKPOINT" line in Program.cs, then right-click a query in Variables. Connection strings are in
+  // appsettings.json; see the README for overriding them.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "SampleApp: SQLite",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/SampleApp.dll",
+      "args": ["sqlite"],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole"
+    },
+    {
+      "name": "SampleApp: SQL Server",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/SampleApp.dll",
+      "args": ["sqlserver"],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole"
+    },
+    {
+      "name": "SampleApp: PostgreSQL",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/SampleApp.dll",
+      "args": ["postgres"],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole"
+    },
+    {
+      "name": "SampleApp: Oracle",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/SampleApp.dll",
+      "args": ["oracle"],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole"
+    }
+  ]
+}

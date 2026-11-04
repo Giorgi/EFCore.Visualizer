@@ -20,7 +20,9 @@ It reuses the Visual Studio visualizer's debuggee-side code (`../EFCore.Visualiz
 - `scripts/build-helper.js`: builds `EFCore.Visualizer.Core` and lays it out in `dist/` like the VSIX:
   `dist/netcoreapp/EFCore.Visualizer.Core.dll` plus `dist/Resources/...`.
 - `src/test/`: tests that run in a real VS Code (see Testing).
-- `test-fixtures/SampleApp`: the EF Core 8 + SQLite app the tests debug.
+- `../../samples/SampleApp` (outside this folder): the EF Core 8 app the tests debug, with SQLite. It's shared
+  with Visual Studio; see its README. The tests rely on its variable names, its `// BREAKPOINT` line and its
+  `IX_{query}` index, so keep those when changing it.
 
 ## Build and test
 
@@ -38,9 +40,15 @@ with vsdbg and runs the Mocha suites in `src/test/suite`. There's no lint step.
 **On Windows, keep the checkout path short** (like `S:\src\EFCore.Visualizer`). Deep paths go past the 260-character
 limit inside `.vscode-test`, and the C# extension's signature check, ripgrep and vsdbg then fail with `ENOENT`.
 
-CI: `.github/workflows/vscode.yml` runs the same steps on `ubuntu-latest` when this folder or
-`src/EFCore.Visualizer.Core` changes. There's no `.vscode/launch.json` for F5 debugging yet, and no `vsce`
-packaging yet.
+CI: `.github/workflows/vscode.yml` runs the same steps on `ubuntu-latest` when this folder,
+`src/EFCore.Visualizer.Core` or `samples/SampleApp` changes. There's no `vsce` packaging yet.
+
+To try the extension by hand, open this folder in VS Code and press F5 ("Run Extension (sample app)" in
+`.vscode/launch.json`). It runs `npm run pretest`, then opens `samples/SampleApp` in a window with the
+extension loaded. That folder has its own `launch.json`, with one configuration per database. After changing
+TypeScript, press F5 again (it rebuilds), or run `npm run compile` and **Developer: Reload Window** in that
+window. After changing `EFCore.Visualizer.Core` or the templates, stop the debugged app first: it keeps the
+loaded DLL locked.
 
 ## How it works
 

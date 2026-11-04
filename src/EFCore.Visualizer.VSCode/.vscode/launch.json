@@ -1,0 +1,18 @@
+{
+  // Open this folder (src/EFCore.Visualizer.VSCode) in VS Code and press F5. It builds the extension,
+  // the helper and the sample app, then opens the sample app in a window with the extension loaded.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Extension (sample app)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "${workspaceFolder}/../../samples/SampleApp"
+      ],
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "preLaunchTask": "build"
+    }
+  ]
+}

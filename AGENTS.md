@@ -14,7 +14,7 @@ There are no tests and no lint step. Build the solution with MSBuild from a Visu
 msbuild src/EFCore.Visualizer.slnx -restore /t:Rebuild
 ```
 
-CI runs the same build. `.github/workflows/build.yml` builds the VSIX in Release on every push and pull request to `main`, and uploads `EFCore.Visualizer.vsix` as an unzipped artifact. `.github/workflows/codeql-analysis.yml` builds the solution for CodeQL. To debug, run `EFCore.Visualizer` from Visual Studio (it starts the Experimental Instance), then debug any app that uses EF Core.
+CI runs the same build. `.github/workflows/build.yml` builds the VSIX in Release on every push and pull request to `main`, and uploads `EFCore.Visualizer.vsix` as an unzipped artifact. `.github/workflows/codeql-analysis.yml` builds the solution for CodeQL. To debug, run `EFCore.Visualizer` from Visual Studio (it starts the Experimental Instance), then debug any app that uses EF Core. `samples/SampleApp` is one: it has a launch profile for each supported database and seeds its own data (see its README). The VSIX project's "Experimental Instance + SampleApp" launch profile opens it in the Experimental Instance. The VS Code extension's tests debug it too, so keep its variable names and its `// BREAKPOINT` line.
 
 **Build order:** there is no project reference between the two Visual Studio projects, both in `src/EFCore.Visualizer.VS`. `EFCore.Visualizer.csproj` packs `..\ObjectSource\bin\$(Configuration)\net6\IQueryableObjectSource.dll` into the VSIX as a `Content` file. The `.slnx` has a `<BuildDependency>` that builds `IQueryableObjectSource` first, so build the solution, not `EFCore.Visualizer.csproj` on its own. Building the project alone can pack a missing or old copy of that DLL.
 

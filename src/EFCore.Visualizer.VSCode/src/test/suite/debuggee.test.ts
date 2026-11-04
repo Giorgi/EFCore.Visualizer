@@ -8,7 +8,7 @@ import { assetFiles, contentSecurityPolicy, PlanView } from '../../webview';
 import { REFRESH_COMMAND, VISUALIZE_COMMAND, VisualizeResult } from '../../extension';
 
 const extensionRoot = path.resolve(__dirname, '../../..');
-const workspace = process.env.EFCORE_VISUALIZER_TEST_WORKSPACE ?? path.join(extensionRoot, 'test-fixtures/SampleApp');
+const workspace = process.env.EFCORE_VISUALIZER_TEST_WORKSPACE ?? path.join(extensionRoot, '../../samples/SampleApp');
 const programCs = path.join(workspace, 'Program.cs');
 const programDll = path.join(workspace, 'bin/Debug/net8.0/SampleApp.dll');
 const helperDll = path.join(extensionRoot, 'dist/netcoreapp/EFCore.Visualizer.Core.dll');
@@ -116,6 +116,7 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
       request: 'launch',
       name: 'EFCore.Visualizer integration test',
       program: programDll,
+      args: ['sqlite'], // whatever the sample's "Database" setting says
       cwd: workspace,
       console: 'internalConsole',
       stopAtEntry: false,
@@ -180,7 +181,7 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
       // The message is the exception's own; the debugger's full text is kept in detail.
       return (
         e instanceof EvaluationError &&
-        e.message === "Expected an IQueryable but got BloggingContext (Parameter 'query')" &&
+        e.message === "Expected an IQueryable but got SqliteBloggingContext (Parameter 'query')" &&
         /threw an exception of type 'System\.ArgumentException'/.test(e.detail)
       );
     });
@@ -240,8 +241,8 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     console.log('error =>', failed.message);
     assert.strictEqual(
       failed.message,
-      "EFCore Visualizer: Couldn't get the query plan: Expected an IQueryable but got BloggingContext (Parameter 'query'). " +
-        "Couldn't get the SQL either: Expected an IQueryable but got BloggingContext (Parameter 'query').",
+      "EFCore Visualizer: Couldn't get the query plan: Expected an IQueryable but got SqliteBloggingContext (Parameter 'query'). " +
+        "Couldn't get the SQL either: Expected an IQueryable but got SqliteBloggingContext (Parameter 'query').",
     );
   });
 
