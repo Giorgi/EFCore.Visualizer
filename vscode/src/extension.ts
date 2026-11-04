@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { EvaluationError, getPlanFile, getQueryFile, loadHelper } from './debuggee';
+import { withProgressNotification } from './progress';
 import { showHtmlFile } from './webview';
 
 export const VISUALIZE_COMMAND = 'efcoreVisualizer.visualizeQuery';
@@ -59,7 +60,7 @@ async function visualize(context: vscode.ExtensionContext, log: vscode.LogOutput
     let planFile: string | undefined;
     let planError: unknown;
     try {
-      planFile = await getPlanFile(session, frameId, expression);
+      planFile = await withProgressNotification('Getting the query plan', getPlanFile(session, frameId, expression));
     } catch (e) {
       planError = e;
       logError(log, `No plan for ${expression}`, e);
