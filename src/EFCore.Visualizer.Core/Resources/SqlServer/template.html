@@ -49,6 +49,12 @@
             color: black;
         }
 
+        /* The arrows are an SVG as wide as the window, not as the plan. In a window narrower than the plan, the
+           arrows past its right edge were cut off; let them show outside the SVG's box instead. */
+        div.qp-root > svg {
+            overflow: visible;
+        }
+
         body {
             background: var(--bg-color);
         }
