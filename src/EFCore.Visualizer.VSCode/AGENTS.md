@@ -40,6 +40,11 @@ npm test          # Linux without a display: xvfb-run -a npm test --ignore-scrip
 `npm test` downloads VS Code into `.vscode-test/`, installs the real C# extension there, debugs the sample app
 with vsdbg and runs the Mocha suites in `src/test/suite`. There's no lint step.
 
+`VSCODE_VERSION=1.90.0 npm test` runs them on the oldest VS Code that `engines.vscode` allows, with the newest C#
+extension compatible with it (2.50.x), in separate `.vscode-test/extensions-1.90.0` and `user-data-1.90.0`
+folders. CI runs both. Older vsdbg versions differ: for example, they don't flag an exception thrown by an
+evaluation as `failedEvaluation` (see `evaluate` in `debuggee.ts`).
+
 **On Windows, keep the checkout path short** (like `S:\src\EFCore.Visualizer`). Deep paths go past the 260-character
 limit inside `.vscode-test`, and the C# extension's signature check, ripgrep and vsdbg then fail with `ENOENT`.
 

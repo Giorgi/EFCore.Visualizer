@@ -6,10 +6,14 @@ async function main(): Promise<void> {
   const extensionDevelopmentPath = path.resolve(__dirname, '../..');
   const extensionTestsPath = path.resolve(__dirname, './suite/index');
   const workspace = path.resolve(extensionDevelopmentPath, '../../samples/SampleApp');
-  const userDataDir = path.resolve(extensionDevelopmentPath, '.vscode-test/user-data');
-  const extensionsDir = path.resolve(extensionDevelopmentPath, '.vscode-test/extensions');
+  // VSCODE_VERSION=1.90.0 tests the oldest supported VS Code. Each version gets its own extensions and settings, so
+  // it gets the newest C# extension compatible with it, as a user of that version would.
+  const version = process.env.VSCODE_VERSION ?? 'stable';
+  const suffix = version === 'stable' ? '' : `-${version}`;
+  const userDataDir = path.resolve(extensionDevelopmentPath, `.vscode-test/user-data${suffix}`);
+  const extensionsDir = path.resolve(extensionDevelopmentPath, `.vscode-test/extensions${suffix}`);
 
-  const vscodeExecutablePath = await downloadAndUnzipVSCode(process.env.VSCODE_VERSION ?? 'stable');
+  const vscodeExecutablePath = await downloadAndUnzipVSCode(version);
 
   // The real C# extension provides the `coreclr` debug type (vsdbg).
   const [cli, ...cliArgs] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);

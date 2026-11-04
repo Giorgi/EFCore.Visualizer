@@ -10,7 +10,8 @@ Visual Studio. It shows the same plan pages.
 
 ## Requirements
 
-* VS Code 1.90 or newer.
+* VS Code 1.90 or newer. In **Watch**, the button and the menu item appear from VS Code 1.103 on; **Variables**
+  and the Command Palette work in all versions.
 * Microsoft's [C# extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
   (`ms-dotnettools.csharp`), which provides the .NET debugger.
 * An app that uses EF Core 7 or newer, on .NET 6 or newer.

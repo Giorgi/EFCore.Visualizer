@@ -52,6 +52,9 @@ export interface EvaluateResponse {
   presentationHint?: { attributes?: string[] };
 }
 
+/** How vsdbg describes an evaluation that threw: "'<expression>' threw an exception of type '<type>'". */
+const THREW = /^'.*' threw an exception of type '[^']+'$/s;
+
 export async function evaluate(session: vscode.DebugSession, frameId: number, expression: string): Promise<EvaluateResponse> {
   let response: EvaluateResponse;
   try {
@@ -59,10 +62,11 @@ export async function evaluate(session: vscode.DebugSession, frameId: number, ex
   } catch (e) {
     throw new EvaluationError(e instanceof Error ? e.message : String(e), expression);
   }
-  // vsdbg reports an exception thrown by func-eval as a normal response flagged "failedEvaluation":
+  // vsdbg reports an exception thrown by func-eval as a normal response:
   //   result: "'X.GetPlanFile(context)' threw an exception of type 'System.ArgumentException'"
   //   type:   "string {System.ArgumentException}", variablesReference -> the exception object
-  if (response.presentationHint?.attributes?.includes('failedEvaluation')) {
+  // Newer versions also flag it "failedEvaluation"; older ones (the C# extension for VS Code 1.90) don't.
+  if (response.presentationHint?.attributes?.includes('failedEvaluation') || THREW.test(response.result)) {
     const message = await readExceptionMessage(session, response.variablesReference);
     throw new EvaluationError(message ?? response.result, expression, message ? `${response.result}: ${message}` : response.result);
   }

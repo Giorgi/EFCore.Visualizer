@@ -9,6 +9,15 @@ on:
 jobs:
   integration-test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The newest VS Code, and the oldest one package.json allows (engines.vscode). Each gets the newest
+        # C# extension compatible with it, so older debuggers are tested too.
+        vscode: [ stable, 1.90.0 ]
+    name: integration-test (VS Code ${{ matrix.vscode }})
+    env:
+      VSCODE_VERSION: ${{ matrix.vscode }}
     defaults:
       run:
         working-directory: src/EFCore.Visualizer.VSCode
