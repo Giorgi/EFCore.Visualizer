@@ -34,6 +34,12 @@
         "category": "EFCore Visualizer",
         "icon": "$(refresh)",
         "enablement": "inDebugMode && debugState == 'stopped'"
+      },
+      {
+        "command": "efcoreVisualizer.copyQuerySql",
+        "title": "Copy SQL",
+        "category": "EFCore Visualizer",
+        "icon": "$(copy)"
       }
     ],
     "menus": {
@@ -63,9 +69,14 @@
       ],
       "editor/title": [
         {
+          "command": "efcoreVisualizer.copyQuerySql",
+          "when": "activeWebviewPanelId == 'efcoreVisualizer.queryPlan'",
+          "group": "navigation@1"
+        },
+        {
           "command": "efcoreVisualizer.refreshQueryPlan",
           "when": "activeWebviewPanelId == 'efcoreVisualizer.queryPlan'",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ],
       "commandPalette": [
@@ -75,6 +86,10 @@
         },
         {
           "command": "efcoreVisualizer.refreshQueryPlan",
+          "when": "activeWebviewPanelId == 'efcoreVisualizer.queryPlan'"
+        },
+        {
+          "command": "efcoreVisualizer.copyQuerySql",
           "when": "activeWebviewPanelId == 'efcoreVisualizer.queryPlan'"
         }
       ]

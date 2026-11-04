@@ -1,12 +1,13 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { EvaluationError, getPlanFile, getQueryFile, getQueryFingerprint, loadHelper } from './debuggee';
+import { EvaluationError, getPlanFile, getQueryFile, getQueryString, loadHelper } from './debuggee';
 import { withProgressNotification } from './progress';
 import { RatingPrompt, reviewUrl } from './rating';
 import { PlanView } from './webview';
 
 export const VISUALIZE_COMMAND = 'efcoreVisualizer.visualizeQuery';
 export const REFRESH_COMMAND = 'efcoreVisualizer.refreshQueryPlan';
+export const COPY_SQL_COMMAND = 'efcoreVisualizer.copyQuerySql';
 
 /** Argument VS Code passes to commands contributed to `debug/variables/context` and `debug/watch/context`. */
 interface VariableContext {
@@ -28,8 +29,13 @@ interface PlanTab {
   readonly view: PlanView;
   readonly sessionId: string;
   readonly expression: string;
-  /** SHA-256 of the query's SQL (with parameter values) when the tab was filled; undefined if it couldn't be generated. */
-  fingerprint?: string;
+  /** The query's SQL, with parameter values, when the tab was filled: what Copy SQL copies. Undefined if it couldn't be generated. */
+  sql?: string;
+  /**
+   * The SQL the tab's plan was made for. Undefined while the tab shows only the SQL (the plan failed), so that
+   * visualizing the variable again retries the plan instead of just bringing the tab to the front.
+   */
+  planSql?: string;
   /** The debug session has ended: the tab stays open, but it can't be refreshed. */
   sessionEnded?: boolean;
 }
@@ -43,6 +49,8 @@ class Visualizer {
   private readonly tabsByVariable = new Map<string, PlanTab>();
   /** All open tabs, including those of ended sessions. */
   private readonly openTabs = new Set<PlanTab>();
+  /** The tab that most recently got the focus (see activeTab). */
+  private lastFocusedTab: PlanTab | undefined;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -54,6 +62,7 @@ class Visualizer {
     return [
       vscode.commands.registerCommand(VISUALIZE_COMMAND, (arg?: VariableContext) => this.visualize(arg)),
       vscode.commands.registerCommand(REFRESH_COMMAND, () => this.refresh()),
+      vscode.commands.registerCommand(COPY_SQL_COMMAND, () => this.copySql()),
       // The next session's "query" is a different variable: it gets a new tab.
       vscode.debug.onDidTerminateDebugSession((session) => {
         for (const [key, tab] of this.tabsByVariable) {
@@ -83,10 +92,7 @@ class Visualizer {
   /** The Refresh button of a plan tab: gets the plan again even if the query hasn't changed (the data may have). */
   async refresh(): Promise<VisualizeResult | undefined> {
     return this.reportErrors(async () => {
-      const tab = [...this.openTabs].find((t) => t.view.panel.active);
-      if (!tab) {
-        throw new Error('Select a query plan tab first.');
-      }
+      const tab = this.activeTab();
       if (tab.sessionEnded) {
         throw new Error('The debug session of this plan has ended. Visualize the query again in the new session.');
       }
@@ -104,13 +110,13 @@ class Visualizer {
     // If the variable already has a tab and its SQL (parameter values included) is the same, that tab is up to date.
     const key = `${session.id}\n${expression}`;
     const existing = this.tabsByVariable.get(key);
-    let fingerprint: string | undefined;
+    let sql: string | undefined;
     try {
-      fingerprint = await getQueryFingerprint(session, frameId, expression);
+      sql = await getQueryString(session, frameId, expression);
     } catch (e) {
-      logError(this.log, `No SQL fingerprint for ${expression}`, e); // can't compare: get the plan again
+      logError(this.log, `No SQL for ${expression}`, e); // can't compare: get the plan again
     }
-    if (existing && !refresh && fingerprint !== undefined && fingerprint === existing.fingerprint) {
+    if (existing && !refresh && sql !== undefined && sql === existing.planSql) {
       existing.view.panel.reveal();
       return { kind: 'unchanged', panel: existing.view.panel };
     }
@@ -125,7 +131,7 @@ class Visualizer {
       logError(this.log, `No plan for ${expression}`, e);
     }
     if (planFile) {
-      const shown = this.fillTab(key, session.id, expression, fingerprint, planFile, `Query Plan: ${expression}`);
+      const shown = this.fillTab(key, session.id, expression, sql, sql, planFile, `Query Plan: ${expression}`);
       // Only a shown plan counts towards asking for a rating; a rating problem must never fail the plan.
       this.rating.planShown().catch((e) => logError(this.log, 'Rating prompt failed', e));
       return { kind: 'plan', ...shown };
@@ -141,20 +147,29 @@ class Visualizer {
     }
     const warning = `EFCore Visualizer: ${messageOf(planError)}`;
     void vscode.window.showWarningMessage(warning);
-    // No fingerprint for the SQL-only page: visualizing the variable again must retry the plan, not just focus this tab.
-    return { kind: 'query', ...this.fillTab(key, session.id, expression, undefined, queryFile, `Query: ${expression}`), warning };
+    // No planSql for the SQL-only page: visualizing the variable again must retry the plan, not just focus this tab.
+    return { kind: 'query', ...this.fillTab(key, session.id, expression, sql, undefined, queryFile, `Query: ${expression}`), warning };
   }
 
   /** Shows the page in the variable's tab, opening one if it has none. */
-  private fillTab(key: string, sessionId: string, expression: string, fingerprint: string | undefined, file: string, title: string) {
+  private fillTab(key: string, sessionId: string, expression: string, sql: string | undefined, planSql: string | undefined, file: string, title: string) {
     let tab = this.tabsByVariable.get(key);
     const isNew = !tab;
     if (!tab) {
       const newTab: PlanTab = { view: new PlanView(title, this.columnForNewTab()), sessionId, expression };
       this.tabsByVariable.set(key, newTab);
       this.openTabs.add(newTab);
+      this.lastFocusedTab = newTab; // a new panel opens with the focus
+      newTab.view.panel.onDidChangeViewState(({ webviewPanel }) => {
+        if (webviewPanel.active) {
+          this.lastFocusedTab = newTab;
+        }
+      });
       newTab.view.panel.onDidDispose(() => {
         this.openTabs.delete(newTab);
+        if (this.lastFocusedTab === newTab) {
+          this.lastFocusedTab = undefined;
+        }
         if (this.tabsByVariable.get(key) === newTab) {
           this.tabsByVariable.delete(key);
         }
@@ -163,7 +178,8 @@ class Visualizer {
     }
     try {
       const html = tab.view.show(file, title);
-      tab.fingerprint = fingerprint;
+      tab.sql = sql;
+      tab.planSql = planSql;
       if (!isNew) {
         tab.view.panel.reveal();
       }
@@ -174,6 +190,35 @@ class Visualizer {
       }
       throw e;
     }
+  }
+
+  /** The Copy SQL button of a plan tab. Works after the debug session has ended too. Returns the copied text. */
+  async copySql(): Promise<string | undefined> {
+    try {
+      const tab = this.activeTab();
+      if (tab.sql === undefined) {
+        throw new Error("The SQL of this query couldn't be generated. The EFCore Visualizer output channel has the error.");
+      }
+      await vscode.env.clipboard.writeText(tab.sql);
+      vscode.window.setStatusBarMessage('$(check) EFCore Visualizer: SQL copied', 3000);
+      return tab.sql;
+    } catch (e) {
+      logError(this.log, 'Copy SQL failed', e);
+      void vscode.window.showErrorMessage(`EFCore Visualizer: ${messageOf(e)}`);
+      return undefined;
+    }
+  }
+
+  /**
+   * The plan tab that has the focus. When the focus moves from one plan tab to another, VS Code updates the two
+   * panels in separate events, so for a moment both can report `active`: the tab that got the focus last wins.
+   */
+  private activeTab(): PlanTab {
+    const tab = this.lastFocusedTab?.view.panel.active ? this.lastFocusedTab : [...this.openTabs].find((t) => t.view.panel.active);
+    if (!tab) {
+      throw new Error('Select a query plan tab first.');
+    }
+    return tab;
   }
 
   /**

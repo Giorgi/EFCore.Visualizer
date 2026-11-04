@@ -60,8 +60,9 @@ debugger runs as func-eval inside the app:
 
 1. `System.Reflection.Assembly.LoadFrom(@"<extension>/dist/netcoreapp/EFCore.Visualizer.Core.dll")`, on every
    visualize. Loading the same path again is cheap.
-2. `IQueryableObjectSource.QueryPlanHelper.GetQueryFingerprint(expr)`: SHA-256 of the SQL with parameter values,
-   without running the query. It decides whether an open tab is still up to date.
+2. `IQueryableObjectSource.QueryPlanHelper.GetQueryString(expr)`: the SQL with parameter values (EF's
+   `ToQueryString`), without running the query. The tab keeps it for Copy SQL, and comparing it decides whether an
+   open tab is still up to date. vsdbg returns long strings whole (a test copies 20 KB of SQL).
 3. `QueryPlanHelper.GetPlanFile(expr)`, or `GetQueryFile(expr)` if the plan fails: each returns the path of an HTML
    page the helper wrote to the debuggee's temp folder.
 4. The extension reads that page, deletes the file, and shows it in a webview.
@@ -84,11 +85,13 @@ Details that matter when changing this:
   row. In Watch, a top-level watch expression has `variableEvaluateNamePresent` false, so its condition also
   accepts `watchItemType == 'expression'`; VS Code still passes the expression's text as `variable.evaluateName`.
 - **Fallback:** only the plan retrieval is caught. If the plan fails, the SQL page is shown with a short warning.
-  That tab gets no fingerprint, so visualizing the variable again retries the plan. If the SQL also fails, one error
+  That tab gets no `planSql`, so visualizing the variable again retries the plan. If the SQL also fails, one error
   reports both. Full errors go to the "EFCore Visualizer" log output channel.
-- **Tabs:** one tab per `sessionId + expression`. A revisit with the same fingerprint only reveals the tab; a
-  different fingerprint refills it. Refresh always refills it. When a session ends, its tabs stay open but can't
-  be refreshed.
+- **Tabs:** one tab per `sessionId + expression`. A revisit whose SQL equals the tab's `planSql` only reveals the
+  tab; different SQL refills it. Refresh always refills it. Copy SQL copies the tab's `sql`. When a session ends, its
+  tabs stay open; Copy SQL still works, Refresh doesn't.
+- **The focused tab** (Refresh, Copy SQL) is the one that last got the focus, from `onDidChangeViewState`. Searching
+  for `panel.active` isn't enough: when the focus moves between two plan tabs, both briefly report `active`.
 
 ### The webview
 

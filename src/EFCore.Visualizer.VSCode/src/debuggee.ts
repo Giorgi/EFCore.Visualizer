@@ -103,7 +103,7 @@ export function getQueryFile(session: vscode.DebugSession, frameId: number, quer
   return evaluateString(session, frameId, `${HELPER_TYPE}.GetQueryFile(${queryExpression})`);
 }
 
-/** SHA-256 of the query's SQL with its parameter values. Doesn't run the query. */
-export function getQueryFingerprint(session: vscode.DebugSession, frameId: number, queryExpression: string): Promise<string> {
-  return evaluateString(session, frameId, `${HELPER_TYPE}.GetQueryFingerprint(${queryExpression})`);
+/** The query's SQL with its parameter values. Doesn't run the query. */
+export function getQueryString(session: vscode.DebugSession, frameId: number, queryExpression: string): Promise<string> {
+  return evaluateString(session, frameId, `${HELPER_TYPE}.GetQueryString(${queryExpression})`);
 }

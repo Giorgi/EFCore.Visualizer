@@ -4,8 +4,6 @@ using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace IQueryableObjectSource;
@@ -30,11 +28,10 @@ public static class QueryPlanHelper
     public static string GetQueryFile(object query) => GenerateQueryFile(AsQueryable(query).ToQueryString());
 
     /// <summary>
-    /// SHA-256 (hex) of the SQL of <paramref name="query"/>, parameter values included. Debuggers compare it to tell
-    /// whether a query changed since its plan was shown. Generating the SQL doesn't run the query.
+    /// The SQL of <paramref name="query"/>, with its parameter values (EF Core's <c>ToQueryString</c>). Debuggers copy
+    /// it, and compare it to tell whether a query changed since its plan was shown. Generating it doesn't run the query.
     /// </summary>
-    public static string GetQueryFingerprint(object query) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(AsQueryable(query).ToQueryString())));
+    public static string GetQueryString(object query) => AsQueryable(query).ToQueryString();
 
     /// <summary>Generates an HTML page with the execution plan of <paramref name="query"/> and returns its path.</summary>
     public static string GetPlanFile(object query)

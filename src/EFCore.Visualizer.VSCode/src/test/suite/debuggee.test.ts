@@ -5,7 +5,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { csharpString, evaluate, EvaluationError, getPlanFile, getQueryFile, HELPER_TYPE, loadHelper, parseCSharpStringResult } from '../../debuggee';
 import { assetFiles, contentSecurityPolicy, PlanView } from '../../webview';
-import { REFRESH_COMMAND, VISUALIZE_COMMAND, VisualizeResult } from '../../extension';
+import { COPY_SQL_COMMAND, REFRESH_COMMAND, VISUALIZE_COMMAND, VisualizeResult } from '../../extension';
 
 const extensionRoot = path.resolve(__dirname, '../../..');
 const workspace = process.env.EFCORE_VISUALIZER_TEST_WORKSPACE ?? path.join(extensionRoot, '../../samples/SampleApp');
@@ -417,6 +417,51 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     }
   });
 
+  it('Copy SQL copies the query with its parameters, also long SQL and from the SQL-only page', async () => {
+    // Some environments (sandboxes, some remote sessions) don't keep what is written to the system clipboard.
+    // There the test checks only the text the command copied, which is what it wrote to the clipboard.
+    const probe = `efcore-visualizer-clipboard-probe-${Date.now()}`;
+    await vscode.env.clipboard.writeText(probe);
+    const clipboardWorks = (await vscode.env.clipboard.readText()) === probe;
+    if (!clipboardWorks) {
+      console.log('  (the system clipboard does not keep text here: checking the copied text only)');
+    }
+    const copy = async (panel: vscode.WebviewPanel) => {
+      panel.reveal(undefined, false);
+      await waitFor(() => (panel.active ? true : undefined), 'the plan tab to become active');
+      const copied = await vscode.commands.executeCommand<string | undefined>(COPY_SQL_COMMAND);
+      if (clipboardWorks) {
+        assert.strictEqual(await vscode.env.clipboard.readText(), copied, 'the clipboard should hold what was copied');
+      }
+      return copied ?? '';
+    };
+    const panels: vscode.WebviewPanel[] = [];
+    try {
+      const plan = await visualizeVariable('parameterized');
+      assert.ok(plan?.kind === 'plan', `expected a plan, got ${JSON.stringify(plan)}`);
+      panels.push(plan.panel);
+      const sql = await copy(plan.panel);
+      console.log('Copy SQL =>', JSON.stringify(sql));
+      // SQLite's ToQueryString declares parameters as ".param set": the copied text runs as it is.
+      assert.match(sql, /^\.param set @__minRating_0 \d+/);
+      assert.match(sql, /FROM "Blogs"/);
+
+      // The text comes back through the debugger as a string value: nothing may be cut off.
+      const longSql = await visualizeVariable(`context.Database.SqlQueryRaw<int>("SELECT 1 AS Value /*" + new string('x', 20000) + "*/")`);
+      assert.ok(longSql?.kind === 'plan', `expected a plan, got ${JSON.stringify(longSql)}`);
+      panels.push(longSql.panel);
+      const copiedLong = await copy(longSql.panel);
+      assert.ok(copiedLong.includes(`/*${'x'.repeat(20000)}*/`), `long SQL was cut off: ${copiedLong.length} characters: ${JSON.stringify(copiedLong.slice(0, 300))}`);
+
+      const fallback = await visualizeVariable('broken');
+      assert.ok(fallback?.kind === 'query', `expected the SQL page, got ${JSON.stringify(fallback)}`);
+      panels.push(fallback.panel);
+      assert.match(await copy(fallback.panel), /MissingTable/);
+    } finally {
+      panels.forEach((p) => p.dispose());
+    }
+  });
+
   // Last: it ends the debug session.
   it('one tab per variable: focused when its query is unchanged, refreshed when it changed', async () => {
     const evaluate = async (expression: string) =>
@@ -471,6 +516,8 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
       const ended = await vscode.commands.executeCommand<VisualizeResult | undefined>(REFRESH_COMMAND);
       assert.ok(ended?.kind === 'error', `expected an error, got ${JSON.stringify(ended)}`);
       assert.match(ended.message, /debug session of this plan has ended/);
+      // Copy SQL still works: the text was kept when the tab was filled.
+      assert.match((await vscode.commands.executeCommand<string | undefined>(COPY_SQL_COMMAND)) ?? '', /FROM "Blogs"/);
     } finally {
       panels.forEach((p) => p.dispose());
     }

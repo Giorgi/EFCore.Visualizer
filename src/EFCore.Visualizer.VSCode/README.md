@@ -37,6 +37,8 @@ that returns a query, such as `query` or `context.Blogs`.
   `Where` or `OrderBy`, a new query assigned, a different parameter value), the tab gets the new plan.
 * The **Refresh** button in the tab's title bar gets the plan again even if the query didn't change, for example
   after the data changed.
+* The **Copy SQL** button next to it copies the query's SQL, with its parameter values declared, ready to run in
+  your database tool. It works after the debug session has ended too.
 * When the debug session ends, its tabs stay open.
 
 The page follows the VS Code color theme.
