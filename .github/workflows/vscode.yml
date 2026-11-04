@@ -2,16 +2,16 @@ name: VS Code extension
 
 on:
   push:
-    paths: [ 'vscode/**', 'src/EFCore.Visualizer.DebuggeeHelper/**', 'src/IQueryableObjectSource/**', 'src/EFCore.Visualizer/Resources/**', '.github/workflows/vscode.yml' ]
+    paths: [ 'src/EFCore.Visualizer.VSCode/**', 'src/EFCore.Visualizer.DebuggeeHelper/**', 'src/IQueryableObjectSource/**', 'src/EFCore.Visualizer/Resources/**', '.github/workflows/vscode.yml' ]
   pull_request:
-    paths: [ 'vscode/**', 'src/EFCore.Visualizer.DebuggeeHelper/**', 'src/IQueryableObjectSource/**', 'src/EFCore.Visualizer/Resources/**', '.github/workflows/vscode.yml' ]
+    paths: [ 'src/EFCore.Visualizer.VSCode/**', 'src/EFCore.Visualizer.DebuggeeHelper/**', 'src/IQueryableObjectSource/**', 'src/EFCore.Visualizer/Resources/**', '.github/workflows/vscode.yml' ]
 
 jobs:
   integration-test:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: vscode
+        working-directory: src/EFCore.Visualizer.VSCode
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4

@@ -6,8 +6,8 @@ debuggee through plain DAP `evaluate` requests against the C# extension's `corec
 1. `System.Reflection.Assembly.LoadFrom(@"<extension>/dist/netcoreapp/EFCore.Visualizer.DebuggeeHelper.dll")`
 2. `IQueryableObjectSource.QueryPlanHelper.GetPlanFile(query)` → path of the generated HTML plan page
 
-`EFCore.Visualizer.DebuggeeHelper` (in `../src`) has no `Microsoft.VisualStudio.DebuggerVisualizers`
-dependency. It compiles the sources in `../src/IQueryableObjectSource`, except the VS-only object source,
+`EFCore.Visualizer.DebuggeeHelper` (in `..`) has no `Microsoft.VisualStudio.DebuggerVisualizers`
+dependency. It compiles the sources in `../IQueryableObjectSource`, except the VS-only object source,
 which is a thin adapter over `QueryPlanHelper`.
 
 ## Usage

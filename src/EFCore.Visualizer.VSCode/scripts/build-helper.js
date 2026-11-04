@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const src = path.resolve(root, '..', 'src');
+const src = path.resolve(root, '..');
 const project = path.join(src, 'EFCore.Visualizer.DebuggeeHelper', 'EFCore.Visualizer.DebuggeeHelper.csproj');
 const buildOut = path.join(root, 'out', 'helper-build');
 const dist = path.join(root, 'dist');
