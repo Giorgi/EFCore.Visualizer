@@ -34,7 +34,7 @@ interface PlanTab {
 }
 
 export function helperAssemblyPath(context: vscode.ExtensionContext): string {
-  return path.join(context.extensionPath, 'dist', 'netcoreapp', 'EFCore.Visualizer.DebuggeeHelper.dll');
+  return path.join(context.extensionPath, 'dist', 'netcoreapp', 'EFCore.Visualizer.Core.dll');
 }
 
 class Visualizer {

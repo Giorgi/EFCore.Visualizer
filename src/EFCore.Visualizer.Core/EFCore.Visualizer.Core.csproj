@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The code both editors share: it runs inside the debuggee process, gets the query or plan, and writes
+    the page from the templates in Resources.
+
+    It must not depend on Microsoft.VisualStudio.DebuggerVisualizers, so that any debugger (VS Code / vsdbg,
+    Rider, ...) can load this DLL with Assembly.LoadFrom and call QueryPlanHelper.GetPlanFile / GetQueryFile
+    through expression evaluation.
+
+    Visual Studio doesn't load this DLL: IQueryableObjectSource compiles these same files into its own DLL,
+    next to the VS object source.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net6</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.0" />
+  </ItemGroup>
+</Project>

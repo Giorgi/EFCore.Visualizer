@@ -10,14 +10,10 @@
     <None Remove="Fonts\fa-brands-400.ttf" />
     <None Remove="Fonts\fa-solid-900.ttf" />
     <None Remove="QueryPlanUserControl.xaml" />
-    <None Remove="Resources\Common\template.html" />
-    <None Remove="Resources\Postgres\template.html" />
-    <None Remove="Resources\Oracle\template.html" />
-    <None Remove="Resources\SQLite\template.html" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\IQueryableObjectSource\bin\$(Configuration)\net6\IQueryableObjectSource.dll" Link="netcoreapp\IQueryableObjectSource.dll" />
+    <Content Include="..\ObjectSource\bin\$(Configuration)\net6\IQueryableObjectSource.dll" Link="netcoreapp\IQueryableObjectSource.dll" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,25 +48,14 @@
     <Content Include="ThirdPartyLicenses\*.*">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="Resources\Postgres\*.*">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="Resources\SqlServer\*.*">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="Resources\Oracle\*.*">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="Resources\Common\*.*">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="Resources\SQLite\*.*">
+    <!-- The page templates of every provider, shipped as <extension>\Resources\<Provider>\... -->
+    <Content Include="..\..\EFCore.Visualizer.Core\Resources\**\*.*" Link="Resources\%(RecursiveDir)%(Filename)%(Extension)">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\IQueryableObjectSource\OperationType.cs" Link="OperationType.cs" />
+    <Compile Include="..\ObjectSource\OperationType.cs" Link="OperationType.cs" />
   </ItemGroup>
 
   <ItemGroup>

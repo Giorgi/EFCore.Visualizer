@@ -16,18 +16,20 @@ msbuild src/EFCore.Visualizer.slnx -restore /t:Rebuild
 
 CI runs the same build. `.github/workflows/build.yml` builds the VSIX in Release on every push and pull request to `main`, and uploads `EFCore.Visualizer.vsix` as an unzipped artifact. `.github/workflows/codeql-analysis.yml` builds the solution for CodeQL. To debug, run `EFCore.Visualizer` from Visual Studio (it starts the Experimental Instance), then debug any app that uses EF Core.
 
-**Build order:** there is no project reference between the two projects. `EFCore.Visualizer.csproj` packs `..\IQueryableObjectSource\bin\$(Configuration)\net6\IQueryableObjectSource.dll` into the VSIX as a `Content` file. The `.slnx` has a `<BuildDependency>` that builds `IQueryableObjectSource` first, so build the solution, not `EFCore.Visualizer.csproj` on its own. Building the project alone can pack a missing or old copy of that DLL.
+**Build order:** there is no project reference between the two Visual Studio projects, both in `src/EFCore.Visualizer.VS`. `EFCore.Visualizer.csproj` packs `..\ObjectSource\bin\$(Configuration)\net6\IQueryableObjectSource.dll` into the VSIX as a `Content` file. The `.slnx` has a `<BuildDependency>` that builds `IQueryableObjectSource` first, so build the solution, not `EFCore.Visualizer.csproj` on its own. Building the project alone can pack a missing or old copy of that DLL.
 
 ## Architecture
 
-The code is split across two processes:
+The code is split across two processes: the editor (Visual Studio or VS Code) and the *debuggee*, the app being debugged.
 
-- **`src/EFCore.Visualizer`** (net48, runs inside the VS process). It uses VisualStudio.Extensibility in-process (`RequiresInProcessHosting = true`) together with the Community.VisualStudio.Toolkit.
+- **`src/EFCore.Visualizer.Core`** (net6) is the code every editor shares. It runs inside the debuggee and holds `QueryPlanHelper`, `DatabaseProvider` with its subclasses, and the page templates in `Resources/`. Keep it free of Visual Studio types. VS doesn't load its DLL: `IQueryableObjectSource` compiles the same files into its own DLL (`<Compile Include="..\..\EFCore.Visualizer.Core\*.cs">`). Other debuggers load `EFCore.Visualizer.Core.dll` with `Assembly.LoadFrom` and call `QueryPlanHelper.GetPlanFile` / `GetQueryFile` through expression evaluation; `src/EFCore.Visualizer.VSCode` is the VS Code extension that does this.
+- **`src/EFCore.Visualizer.VS/Vsix`** (project `EFCore.Visualizer`, net48, runs inside the VS process) is the Visual Studio extension. It uses VisualStudio.Extensibility in-process (`RequiresInProcessHosting = true`) together with the Community.VisualStudio.Toolkit.
   - `EFCoreQueryableDebuggerVisualizerProvider` registers the visualizer for `EntityQueryable<T>` and `IncludableQueryable<T,P>`. It names the debuggee-side object source by its assembly-qualified string name. The menu label ("Query Plan Visualizer") comes from `.vsextension/string-resources.json`.
   - `QueryPlanUserControl` is a WPF control that hosts WebView2. It sends two requests to the object source, `GetQuery` and then `GetQueryPlan`. Each reply is a path to a generated HTML file, which the control opens in WebView2. If the plan request fails, the control shows the error and displays the query-only page instead. It also passes the VS theme to the page: it sets `PreferredColorScheme` and injects the `--bg-color` CSS variable after navigation.
-- **`src/IQueryableObjectSource`** (net6, loaded into the *debuggee* process). It is installed into the VSIX under `netcoreapp\`.
-  - `EFCoreQueryableObjectSource.TransferData` is a thin adapter over `QueryPlanHelper`, which holds the debugger-agnostic logic. It reads a 1-byte `OperationType` request and writes the reply with `StreamExtensions`: a `bool isError` followed by a `string`, written with `BinaryWriter` and `Encoding.Default`. `QueryPlanUserControl.ReadString` reads the reply in the same format. If you change one side, change the other side too.
+- **`src/EFCore.Visualizer.VS/ObjectSource`** (project `IQueryableObjectSource`, net6, loaded into the debuggee) is the Visual Studio object source, plus the Core files compiled in. It is installed into the VSIX under `netcoreapp\`.
+  - `EFCoreQueryableObjectSource.TransferData` is a thin adapter over `QueryPlanHelper`. It reads a 1-byte `OperationType` request and writes the reply with `StreamExtensions`: a `bool isError` followed by a `string`, written with `BinaryWriter` and UTF-8. `QueryPlanUserControl.ReadString` reads the reply in the same format. If you change one side, change the other side too. Name the encoding on both sides: `Encoding.Default` is UTF-8 in the debuggee (.NET) but the ANSI code page in VS (.NET Framework).
   - `OperationType.cs` is linked into the VS project (`<Compile Include=... Link=...>`), so both sides use the same enum.
+- **Inside `EFCore.Visualizer.Core`:**
   - `QueryPlanHelper.GetDatabaseProvider` selects a `DatabaseProvider` subclass by the `DbCommand` type's full name, given as a **string**. The project references only `Microsoft.EntityFrameworkCore.Relational` 7.0.0 and no provider packages, so provider code may use only `System.Data.Common` APIs.
   - Each provider runs its own plan query against the app's own connection and transaction. SQL Server, Postgres and Oracle **execute the query** to get an actual plan; SQLite does not:
     - SQL Server: `SET STATISTICS XML ON`
@@ -37,16 +39,14 @@ The code is split across two processes:
 
     Providers that change session settings put them back in a `finally` block. The VS debugger stops an evaluation after about 5 seconds, so a slow plan query fails with a timeout. The README lists this as a known issue.
   - The plan is placed into `Resources/<Provider>/template.html`, which replaces the `{plan}` and `{query}` placeholders. The result is written as a new `EFCore.Visualizer-<random>.html` file in the temp folder. Before the data goes in, the template's relative `<script src>` and `<link href>` values are rewritten to absolute `file:` URLs of the template folder, so the page still finds its scripts and styles. Don't use a `<base>` for this: it would also redirect the page's own `#…` links, such as pev2's tabs. The VS side deletes that file when the control unloads. `GetPlanDirectory` returns the folder name, and `Encode` sets the escaping. The default escaping is JS string escaping with `JavaScriptEncoder.Default`, which also escapes `<`, quotes and backticks, because the query and plan contain data such as parameter values; templates must put `{plan}`/`{query}` only inside quoted JavaScript strings, never inside backtick strings, where `${` would still run. SQLite overrides it, because it creates the HTML tree itself.
-  - `QueryPlanHelper` locates `Resources` relative to its own DLL: two directory levels up from the DLL, then `Resources`.
-- **`src/EFCore.Visualizer.DebuggeeHelper`** (net6) compiles the same sources from `IQueryableObjectSource`, except the VS-specific `EFCoreQueryableObjectSource`, `StreamExtensions` and `OperationType`. It has no Visual Studio dependency, so other debuggers can load it with `Assembly.LoadFrom` and call `QueryPlanHelper.GetPlanFile` / `GetQueryFile` through expression evaluation. Keep the shared sources in `IQueryableObjectSource` and free of Visual Studio types.
+  - `QueryPlanHelper` locates `Resources` relative to its own DLL: two directory levels up from the DLL, then `Resources`. Both extensions ship the templates that way: the VSIX packs `EFCore.Visualizer.Core\Resources\**` as `Resources\...` next to `netcoreapp\`, and the VS Code build copies them to `dist/Resources` next to `dist/netcoreapp`.
 
 ### Adding a database provider
 
-1. Add a `DatabaseProvider` subclass in `IQueryableObjectSource`.
+1. Add a `DatabaseProvider` subclass in `EFCore.Visualizer.Core`.
 2. Add its command type name to the `QueryPlanHelper.GetDatabaseProvider` switch.
-3. Add a `Resources/<Name>/template.html`, plus any JS/CSS it needs. Shared assets are in `Resources/Common`.
-4. In `EFCore.Visualizer.csproj`, add a `<Content Include="Resources\<Name>\*.*"><IncludeInVSIX>true</IncludeInVSIX></Content>` entry, and a `<None Remove>` entry for the template. Without these, the files do not ship.
+3. Add a `Resources/<Name>/template.html` in `EFCore.Visualizer.Core`, plus any JS/CSS it needs. Shared assets are in `Resources/Common`. Both extensions pick up every file under `Resources`, so no project file needs a change.
 
 ## Release bookkeeping
 
-The extension version is in `src/EFCore.Visualizer/source.extension.vsixmanifest` (`Identity Version`). The marketplace ID is `GiorgiDalakishvili.EFCoreVisualizer`. Third-party visualization libraries (pev2, html-query-plan, Treeflex, highlight.js) are vendored under `Resources/`, and their licenses are in `ThirdPartyLicenses/`.
+The extension version is in `src/EFCore.Visualizer.VS/Vsix/source.extension.vsixmanifest` (`Identity Version`). The marketplace ID is `GiorgiDalakishvili.EFCoreVisualizer`. Third-party visualization libraries (pev2, html-query-plan, Treeflex, highlight.js) are vendored under `src/EFCore.Visualizer.Core/Resources/`, and their licenses are in `src/EFCore.Visualizer.VS/Vsix/ThirdPartyLicenses/`.

@@ -5,6 +5,15 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
+  <!--
+    The Visual Studio object source. It runs inside the debuggee process and answers the VS extension's
+    requests with QueryPlanHelper, whose files (shared with the other editors) are compiled in from
+    EFCore.Visualizer.Core.
+  -->
+  <ItemGroup>
+    <Compile Include="..\..\EFCore.Visualizer.Core\*.cs" Link="Core\%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.DebuggerVisualizers" Version="17.6.1032901" />

@@ -1,8 +1,8 @@
 <Solution>
-  <Project Path="EFCore.Visualizer/EFCore.Visualizer.csproj">
-    <BuildDependency Project="IQueryableObjectSource/IQueryableObjectSource.csproj" />
+  <Project Path="EFCore.Visualizer.VS/Vsix/EFCore.Visualizer.csproj">
+    <BuildDependency Project="EFCore.Visualizer.VS/ObjectSource/IQueryableObjectSource.csproj" />
     <Deploy Solution="Debug|*" />
   </Project>
-  <Project Path="EFCore.Visualizer.DebuggeeHelper/EFCore.Visualizer.DebuggeeHelper.csproj" />
-  <Project Path="IQueryableObjectSource/IQueryableObjectSource.csproj" />
+  <Project Path="EFCore.Visualizer.Core/EFCore.Visualizer.Core.csproj" />
+  <Project Path="EFCore.Visualizer.VS/ObjectSource/IQueryableObjectSource.csproj" />
 </Solution>

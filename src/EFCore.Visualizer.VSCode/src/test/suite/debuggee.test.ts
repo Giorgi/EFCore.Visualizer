@@ -11,7 +11,7 @@ const extensionRoot = path.resolve(__dirname, '../../..');
 const workspace = process.env.EFCORE_VISUALIZER_TEST_WORKSPACE ?? path.join(extensionRoot, 'test-fixtures/SampleApp');
 const programCs = path.join(workspace, 'Program.cs');
 const programDll = path.join(workspace, 'bin/Debug/net8.0/SampleApp.dll');
-const helperDll = path.join(extensionRoot, 'dist/netcoreapp/EFCore.Visualizer.DebuggeeHelper.dll');
+const helperDll = path.join(extensionRoot, 'dist/netcoreapp/EFCore.Visualizer.Core.dll');
 const resourcesDir = path.join(extensionRoot, 'dist/Resources');
 
 /** Files the helper generated in the temp folder. */
@@ -143,7 +143,7 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     const resourcesBefore = resourceFiles();
     const loaded = await loadHelper(session, frameId, helperDll);
     console.log('Assembly.LoadFrom =>', loaded.type, loaded.result);
-    assert.match(loaded.result, /EFCore\.Visualizer\.DebuggeeHelper/);
+    assert.match(loaded.result, /EFCore\.Visualizer\.Core/);
 
     const queryFile = await getQueryFile(session, frameId, 'query');
     console.log('GetQueryFile(query) =>', queryFile);

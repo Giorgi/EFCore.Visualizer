@@ -3,12 +3,11 @@
 Port of the Visual Studio visualizer. Instead of the VS-only `VisualizerObjectSource`, it talks to the
 debuggee through plain DAP `evaluate` requests against the C# extension's `coreclr` debugger (vsdbg):
 
-1. `System.Reflection.Assembly.LoadFrom(@"<extension>/dist/netcoreapp/EFCore.Visualizer.DebuggeeHelper.dll")`
+1. `System.Reflection.Assembly.LoadFrom(@"<extension>/dist/netcoreapp/EFCore.Visualizer.Core.dll")`
 2. `IQueryableObjectSource.QueryPlanHelper.GetPlanFile(query)` → path of the generated HTML plan page
 
-`EFCore.Visualizer.DebuggeeHelper` (in `..`) has no `Microsoft.VisualStudio.DebuggerVisualizers`
-dependency. It compiles the sources in `../IQueryableObjectSource`, except the VS-only object source,
-which is a thin adapter over `QueryPlanHelper`.
+`EFCore.Visualizer.Core` (in `..`) is the code shared with the Visual Studio visualizer, and it has no
+`Microsoft.VisualStudio.DebuggerVisualizers` dependency. The page templates are in its `Resources` folder.
 
 ## Usage
 

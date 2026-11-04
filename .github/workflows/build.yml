@@ -32,5 +32,5 @@ jobs:
       with:
         # Upload the .vsix as-is instead of zipped. The artifact is named after the file.
         archive: false
-        path: src\EFCore.Visualizer\bin\${{ env.Configuration }}\net48\EFCore.Visualizer.vsix
+        path: src\EFCore.Visualizer.VS\Vsix\bin\${{ env.Configuration }}\net48\EFCore.Visualizer.vsix
         if-no-files-found: error

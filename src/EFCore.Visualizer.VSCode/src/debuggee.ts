@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
  * any .NET debug adapter that supports method calls in expressions (vsdbg via the C# extension).
  *
  * Protocol:
- *   1. System.Reflection.Assembly.LoadFrom(@"<ext>/dist/netcoreapp/EFCore.Visualizer.DebuggeeHelper.dll")
+ *   1. System.Reflection.Assembly.LoadFrom(@"<ext>/dist/netcoreapp/EFCore.Visualizer.Core.dll")
  *   2. IQueryableObjectSource.QueryPlanHelper.GetPlanFile(<expression>)  -> path of a generated HTML file
  */
 export const HELPER_TYPE = 'IQueryableObjectSource.QueryPlanHelper';

@@ -13,7 +13,7 @@ namespace IQueryableObjectSource;
 /// <summary>
 /// Debugger-agnostic entry points that run inside the debuggee.
 /// Debuggers call these through expression evaluation (func-eval), for example:
-/// <c>System.Reflection.Assembly.LoadFrom("…/EFCore.Visualizer.DebuggeeHelper.dll")</c> followed by
+/// <c>System.Reflection.Assembly.LoadFrom("…/EFCore.Visualizer.Core.dll")</c> followed by
 /// <c>IQueryableObjectSource.QueryPlanHelper.GetPlanFile(query)</c>.
 /// Both methods return the full path of an HTML file generated in the temp folder and throw on failure.
 /// The caller deletes the file when it no longer needs it.
