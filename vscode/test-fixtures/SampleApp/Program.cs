@@ -15,6 +15,8 @@ var included = context.Blogs.Include(b => b.Posts);
 IEnumerable<Blog> enumerable = query;
 var numbers = new[] { 1, 2, 3 }.AsQueryable();
 var list = query.ToList();
+// Its SQL can be generated, but the plan fails (the table doesn't exist): the visualizer falls back to the SQL.
+var broken = context.Database.SqlQueryRaw<int>("SELECT Value FROM MissingTable");
 
 Console.WriteLine(query.Count()); // BREAKPOINT: integration test stops here and inspects `query`
 

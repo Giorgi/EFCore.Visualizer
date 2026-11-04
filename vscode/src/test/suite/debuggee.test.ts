@@ -76,6 +76,14 @@ async function waitFor<T>(probe: () => T | undefined, what: string, timeoutMs = 
   }
 }
 
+/** Runs the command with the argument VS Code passes from the Variables view's context menu. */
+function visualizeVariable(name: string): Thenable<VisualizeResult | undefined> {
+  return vscode.commands.executeCommand<VisualizeResult | undefined>(VISUALIZE_COMMAND, {
+    sessionId: vscode.debug.activeDebugSession?.id,
+    variable: { name, evaluateName: name },
+  });
+}
+
 describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () => {
   let session: vscode.DebugSession;
   let frameId: number;
@@ -169,7 +177,12 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     // Exceptions thrown inside the debuggee must surface as EvaluationError, not as a bogus path.
     await assert.rejects(getPlanFile(session, frameId, 'context'), (e: unknown) => {
       console.log('GetPlanFile(context) =>', (e as Error).message);
-      return e instanceof EvaluationError && /System\.ArgumentException.*Expected an IQueryable/.test(e.message);
+      // The message is the exception's own; the debugger's full text is kept in detail.
+      return (
+        e instanceof EvaluationError &&
+        e.message === "Expected an IQueryable but got BloggingContext (Parameter 'query')" &&
+        /threw an exception of type 'System\.ArgumentException'/.test(e.detail)
+      );
     });
 
     fs.rmSync(queryFile, { force: true });
@@ -188,8 +201,7 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
       variable: { name: 'query', evaluateName: 'query', value: '', variablesReference: 0 },
     });
 
-    assert.ok(result, 'command returned nothing (an error message was shown)');
-    assert.strictEqual(result.kind, 'plan');
+    assert.ok(result?.kind === 'plan', `expected a plan, got ${JSON.stringify(result)}`);
     assert.strictEqual(result.panel.title, 'Query Plan: query');
     assert.match(result.html, /<link rel="stylesheet" href="[^"]*vscode-(cdn|resource)[^"]*\/Resources\/Common\/treeflex\.css">/);
     assert.match(result.html, /SEARCH \w+ USING INDEX IX_Blogs_Rating/);
@@ -206,6 +218,28 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     result.panel.dispose();
   });
 
+  it('falls back to the SQL with a short warning, and reports both errors when that fails too', async () => {
+    // The plan fails (no such table), the SQL works: the SQL page opens, and the warning is the exception's message.
+    const fallback = await visualizeVariable('broken');
+    assert.ok(fallback?.kind === 'query', `expected the SQL page, got ${JSON.stringify(fallback)}`);
+    console.log('warning =>', fallback.warning);
+    assert.match(fallback.warning, /^EFCore Visualizer: Failed to extract execution plan\. .*no such table: MissingTable/);
+    assert.doesNotMatch(fallback.warning, /threw an exception/, "the debugger's own wording belongs in the log, not the warning");
+    assert.strictEqual(fallback.panel.title, 'Query: broken');
+    assert.match(fallback.html, /MissingTable/);
+    fallback.panel.dispose();
+
+    // Neither works: one error that names both causes.
+    const failed = await visualizeVariable('context');
+    assert.ok(failed?.kind === 'error', `expected an error, got ${JSON.stringify(failed)}`);
+    console.log('error =>', failed.message);
+    assert.strictEqual(
+      failed.message,
+      "EFCore Visualizer: Couldn't get the query plan: Expected an IQueryable but got BloggingContext (Parameter 'query'). " +
+        "Couldn't get the SQL either: Expected an IQueryable but got BloggingContext (Parameter 'query').",
+    );
+  });
+
   it('plan page follows the VS Code theme, not the OS', async () => {
     // In a webview, prefers-color-scheme follows the OS (with the default window.systemColorTheme), so the
     // extension resolves the templates' "(prefers-color-scheme: dark)" itself and re-renders on theme changes.
@@ -216,11 +250,8 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
     };
     try {
       await setTheme('Default Dark Modern', vscode.ColorThemeKind.Dark);
-      const result = await vscode.commands.executeCommand<VisualizeResult | undefined>(VISUALIZE_COMMAND, {
-        sessionId: session.id,
-        variable: { name: 'query', evaluateName: 'query' },
-      });
-      assert.ok(result, 'command returned nothing (an error message was shown)');
+      const result = await visualizeVariable('query');
+      assert.ok(result?.kind === 'plan', `expected a plan, got ${JSON.stringify(result)}`);
       assert.doesNotMatch(result.html, /prefers-color-scheme:\s*(dark|light)\)/, 'the page must not depend on the OS color scheme');
       assert.match(result.html, /@media all \{/, 'SQLite template should be in dark mode');
 

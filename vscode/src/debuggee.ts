@@ -10,8 +10,12 @@ import * as vscode from 'vscode';
  */
 export const HELPER_TYPE = 'IQueryableObjectSource.QueryPlanHelper';
 
+/**
+ * An evaluation that failed. `message` is short enough to show to the user (the exception's own message when the
+ * debuggee threw); `detail` has the debugger's full text, for the log.
+ */
 export class EvaluationError extends Error {
-  constructor(message: string, readonly expression: string) {
+  constructor(message: string, readonly expression: string, readonly detail: string = message) {
     super(message);
   }
 }
@@ -60,7 +64,7 @@ export async function evaluate(session: vscode.DebugSession, frameId: number, ex
   //   type:   "string {System.ArgumentException}", variablesReference -> the exception object
   if (response.presentationHint?.attributes?.includes('failedEvaluation')) {
     const message = await readExceptionMessage(session, response.variablesReference);
-    throw new EvaluationError(message ? `${response.result}: ${message}` : response.result, expression);
+    throw new EvaluationError(message ?? response.result, expression, message ? `${response.result}: ${message}` : response.result);
   }
   return response;
 }
