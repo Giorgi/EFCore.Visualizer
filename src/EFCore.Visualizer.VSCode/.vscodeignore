@@ -1,0 +1,10 @@
+# Package only what the extension needs at run time; everything else (sources, tests, the downloaded test
+# VS Code, the helper's build folder, node_modules: the extension has no run-time npm dependencies) stays out.
+**
+!package.json
+!README.md
+!CHANGELOG.md
+!LICENSE
+!images/icon.png
+!out/*.js
+!dist/**

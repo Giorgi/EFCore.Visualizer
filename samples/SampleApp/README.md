@@ -41,8 +41,8 @@ Set a breakpoint on the line marked `// BREAKPOINT` in `Program.cs` and start de
   profile of the `EFCore.Visualizer` project and press F5. The Experimental Instance opens with `SampleApp.slnx`.
   Pick a database launch profile there and debug. Hover over a query and choose **Query Plan Visualizer**.
 * **VS Code:** open `src/EFCore.Visualizer.VSCode` and press F5. In the window that opens, pick a
-  `SampleApp: ...` configuration and debug. Right-click a query in **Variables** and choose
-  **Visualize Query Plan**.
+  `SampleApp: ...` configuration and debug. In **Variables**, hover over a query and click the
+  **Visualize Query Plan** button at the end of its row, or right-click the query and choose it from the menu.
 
 `recentPosts` (a join), `postsPerTopic` (an aggregate) and `activeBlogs` (a subquery) show the plan pages on
 real data. The other variables are the cases the integration tests check, such as `broken`, whose plan fails

@@ -1,21 +1,39 @@
 {
   "name": "vscode-efcore-visualizer",
   "displayName": "EFCore Visualizer",
-  "description": "View Entity Framework Core query plans while debugging",
-  "version": "0.0.1",
+  "description": "View the execution plan of an Entity Framework Core query while debugging. SQL Server, PostgreSQL, Oracle and SQLite.",
+  "version": "1.0.0",
   "publisher": "GiorgiDalakishvili",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/Giorgi/EFCore.Visualizer"
+    "url": "https://github.com/Giorgi/EFCore.Visualizer",
+    "directory": "src/EFCore.Visualizer.VSCode"
   },
+  "homepage": "https://github.com/Giorgi/EFCore.Visualizer",
+  "bugs": {
+    "url": "https://github.com/Giorgi/EFCore.Visualizer/issues"
+  },
+  "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
     "Debuggers",
     "Visualization"
+  ],
+  "keywords": [
+    "entity framework",
+    "ef core",
+    "efcore",
+    "query plan",
+    "execution plan",
+    "sql server",
+    "postgresql",
+    "oracle",
+    "sqlite",
+    "debugger visualizer"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -100,13 +118,16 @@
     "build:helper": "node scripts/build-helper.js",
     "build:fixture": "dotnet build ../../samples/SampleApp/SampleApp.csproj -c Debug",
     "pretest": "npm run compile && npm run build:helper && npm run build:fixture",
-    "test": "node out/test/runTest.js"
+    "test": "node out/test/runTest.js",
+    "vscode:prepublish": "npm run compile && npm run build:helper && node scripts/copy-license.js",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/mocha": "10.0.10",
     "@types/node": "22.20.5",
     "@types/vscode": "1.90.0",
     "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "4.0.0",
     "mocha": "11.8.0",
     "typescript": "5.9.3"
   }

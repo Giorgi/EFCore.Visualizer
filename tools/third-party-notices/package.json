@@ -1,0 +1,13 @@
+{
+  "name": "third-party-notices",
+  "private": true,
+  "description": "The libraries vendored in src/EFCore.Visualizer.Core/Resources, at their vendored versions. Installed only to collect their license texts: see generate.js.",
+  "dependencies": {
+    "bootstrap": "5.3.8",
+    "highlight.js": "11.11.1",
+    "html-query-plan": "2.6.1",
+    "pev2": "1.25.0",
+    "treeflex": "2.0.1",
+    "vue": "3.5.44"
+  }
+}

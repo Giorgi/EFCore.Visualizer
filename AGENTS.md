@@ -8,7 +8,7 @@ A Visual Studio debugger visualizer (VSIX) that shows the execution plan of an E
 
 ## Build
 
-There are no tests and no lint step. Build the solution with MSBuild from a Visual Studio developer environment. `dotnet build` does not work, because the VSIX project needs the VS SDK build targets.
+There's no lint step. The only automated tests are the VS Code extension's (`src/EFCore.Visualizer.VSCode`, see its `AGENTS.md`). They also cover `EFCore.Visualizer.Core`, the code VS shares, but not the VS extension itself. Build the solution with MSBuild from a Visual Studio developer environment. `dotnet build` does not work, because the VSIX project needs the VS SDK build targets.
 
 ```
 msbuild src/EFCore.Visualizer.slnx -restore /t:Rebuild
@@ -49,4 +49,4 @@ The code is split across two processes: the editor (Visual Studio or VS Code) an
 
 ## Release bookkeeping
 
-The extension version is in `src/EFCore.Visualizer.VS/Vsix/source.extension.vsixmanifest` (`Identity Version`). The marketplace ID is `GiorgiDalakishvili.EFCoreVisualizer`. Third-party visualization libraries (pev2, html-query-plan, Treeflex, highlight.js) are vendored under `src/EFCore.Visualizer.Core/Resources/`, and their licenses are in `src/EFCore.Visualizer.VS/Vsix/ThirdPartyLicenses/`.
+The extension version is in `src/EFCore.Visualizer.VS/Vsix/source.extension.vsixmanifest` (`Identity Version`). The marketplace ID is `GiorgiDalakishvili.EFCoreVisualizer`. Third-party visualization libraries (pev2, html-query-plan, Treeflex, highlight.js) are vendored under `src/EFCore.Visualizer.Core/Resources/`. Their license texts, and those of everything they bundle (pev2's build includes all its dependencies except Vue), are in `Resources/ThirdPartyNotices.txt`, which both extensions ship. Regenerate it after updating a vendored library: set the versions in `tools/third-party-notices/package.json` and in the file list in its `generate.js`, then run `npm install --ignore-scripts` and `node generate.js` there. `src/EFCore.Visualizer.VS/Vsix/ThirdPartyLicenses/` has the older, partial licenses of pev2 and html-query-plan.

@@ -3,3 +3,4 @@ out/
 dist/
 .vscode-test/
 *.vsix
+LICENSE
