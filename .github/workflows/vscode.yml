@@ -32,3 +32,21 @@ jobs:
       - run: npm ci
       - run: npm run pretest
       - run: xvfb-run -a npm run test --ignore-scripts
+      # A VSIX of every run, for trying a build by hand (for example on macOS). Only the stable job packages it:
+      # the package doesn't depend on the VS Code version tested. Publishing is vscode-publish.yml.
+      - name: Package
+        if: matrix.vscode == 'stable'
+        id: vsix
+        run: |
+          npm run package
+          name="$(node -p "require('./package.json').name")-$(node -p "require('./package.json').version").vsix"
+          test -f "$name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+      - name: Upload VSIX
+        if: matrix.vscode == 'stable'
+        uses: actions/upload-artifact@v7
+        with:
+          # Upload the .vsix as-is instead of zipped. The artifact is named after the file.
+          archive: false
+          path: src/EFCore.Visualizer.VSCode/${{ steps.vsix.outputs.name }}
+          if-no-files-found: error

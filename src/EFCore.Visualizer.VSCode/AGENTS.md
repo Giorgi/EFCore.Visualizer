@@ -54,7 +54,8 @@ installed.` (Locally, where `.vscode-test` already has it, the line is `… is a
 limit inside `.vscode-test`, and the C# extension's signature check, ripgrep and vsdbg then fail with `ENOENT`.
 
 CI: `.github/workflows/vscode.yml` runs the same steps on `ubuntu-latest` when this folder,
-`src/EFCore.Visualizer.Core` or `samples/SampleApp` changes.
+`src/EFCore.Visualizer.Core` or `samples/SampleApp` changes. The stable job also packages the extension and uploads
+the VSIX as a run artifact, for trying a build by hand.
 
 **Packaging:** `npm run package` runs `vsce package`, which first runs `vscode:prepublish` (compile, build the helper
 in Release, copy the repository's `LICENSE` here; the copy is git-ignored). It writes
