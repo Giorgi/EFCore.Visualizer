@@ -25,12 +25,12 @@ object RiderCompat {
         (session as? XDebugSessionImpl)?.sessionTab?.variablesView?.tree
 }
 
-/** Tells Rider's test framework where test solutions and gold files live (found by package lookup). */
+/** Tells Rider's test framework where test solutions and gold files live (found by package lookup); see prepareTestData. */
 @Suppress("unused")
 object RiderTestDataMarker : IRiderTestDataMarker {
     override val testDataFromRoot: File
-        get() = File("src/test/testData")
+        get() = File("build/testData")
     // 2025.x resolves the default against JetBrains' own source tree; point at this project's folder directly.
     override val testData: File
-        get() = File("src/test/testData").absoluteFile
+        get() = File("build/testData").absoluteFile
 }

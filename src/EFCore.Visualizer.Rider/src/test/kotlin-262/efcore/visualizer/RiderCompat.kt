@@ -23,9 +23,9 @@ object RiderCompat {
     }
 }
 
-/** Tells Rider's test framework where test solutions and gold files live (found by package lookup). */
+/** Tells Rider's test framework where test solutions and gold files live (found by package lookup); see prepareTestData. */
 @Suppress("unused")
 object RiderTestDataMarker : IRiderTestDataMarker {
     override val testDataFromRoot: Path
-        get() = Path.of("src/test/testData")
+        get() = Path.of("build/testData")
 }

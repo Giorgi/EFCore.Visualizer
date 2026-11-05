@@ -14,12 +14,12 @@ object QueryPlanVisualizer {
     private const val PLUGIN_ID = "efcore.visualizer"
     const val HELPER_PROPERTY = "efcore.visualizer.helper"
 
-    /** <plugin>/netcoreapp/EFCore.Visualizer.DebuggeeHelper.dll; templates live in <plugin>/Resources. */
+    /** <plugin>/netcoreapp/EFCore.Visualizer.Core.dll; templates live in <plugin>/Resources. */
     fun helperPath(): Path {
         System.getProperty(HELPER_PROPERTY)?.let { return Path.of(it) }
         // <plugin>/lib/<our jar>  ->  <plugin>   (the plugin-descriptor lookups are internal API in 2026.2)
         val jar = PathManager.getJarPathForClass(QueryPlanVisualizer::class.java) ?: error("Cannot locate the $PLUGIN_ID plugin")
-        return Path.of(jar).parent.parent.resolve("netcoreapp/EFCore.Visualizer.DebuggeeHelper.dll")
+        return Path.of(jar).parent.parent.resolve("netcoreapp/EFCore.Visualizer.Core.dll")
     }
 
     /**

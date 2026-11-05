@@ -44,7 +44,7 @@ abstract class DebuggeeHelperTestBase : DebuggerTestBase() {
 
             val loaded = evaluateExpression("System.Reflection.Assembly.LoadFrom(@\"$helperDll\")", timeout)
             println("Assembly.LoadFrom => ${loaded.result}")
-            assertContains(loaded.result, "EFCore.Visualizer.DebuggeeHelper")
+            assertContains(loaded.result, "EFCore.Visualizer.Core")
 
             val queryFile = evaluateExpression("IQueryableObjectSource.QueryPlanHelper.GetQueryFile(query)", timeout)
             println("GetQueryFile(query) => ${queryFile.result}")

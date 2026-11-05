@@ -77,16 +77,16 @@ intellijPlatform {
 // Debugger-agnostic helper laid out like the VSIX: <root>/netcoreapp/<dll> + <root>/Resources/...
 val helperRoot = layout.buildDirectory.dir("helper")
 val buildHelper by tasks.registering(Exec::class) {
-    val project = rootDir.resolve("../src/EFCore.Visualizer.DebuggeeHelper/EFCore.Visualizer.DebuggeeHelper.csproj")
+    val project = rootDir.resolve("../EFCore.Visualizer.Core/EFCore.Visualizer.Core.csproj")
     commandLine("dotnet", "build", project.path, "-c", "Release", "-o", helperRoot.get().dir("build").asFile.path)
-    // sync (not copy) so pages generated into these folders by earlier runs never end up in the plugin zip.
+    // sync (not copy), so files deleted from Core don't stay in the plugin zip.
     doLast {
         sync {
-            from(helperRoot.get().dir("build")) { include("EFCore.Visualizer.DebuggeeHelper.dll", "EFCore.Visualizer.DebuggeeHelper.pdb") }
+            from(helperRoot.get().dir("build")) { include("EFCore.Visualizer.Core.dll", "EFCore.Visualizer.Core.pdb") }
             into(helperRoot.get().dir("netcoreapp"))
         }
         sync {
-            from(rootDir.resolve("../src/EFCore.Visualizer/Resources"))
+            from(rootDir.resolve("../EFCore.Visualizer.Core/Resources"))
             into(helperRoot.get().dir("Resources"))
         }
     }
@@ -103,11 +103,30 @@ tasks.withType<PrepareSandboxTask>().configureEach {
 
 // Rider 2025.x SDK declares a test-only service for the bundled JavaScript "Live Edit" plugin whose class it does not
 // ship; it fails when a debug session starts. The tests don't need Live Edit, so leave it out of the test sandbox.
+// On Windows, the bundled C++ plugin's console stack-trace filter asks for a C++ test toolchain ("Environment is not
+// specified ... -Dcpp.test.msvc.home"), on the debugged app's console output. The error it logs fails the test. The
+// tests don't need C++ support.
 tasks.named<PrepareSandboxTask>("prepareTestSandbox") {
     if (riderMajor < 2026) disabledPlugins.add("com.intellij.plugins.html.instantEditing")
+    if (org.gradle.internal.os.OperatingSystem.current().isWindows) disabledPlugins.add("com.jetbrains.rider-cpp")
+}
+
+// Test data as Rider's test framework expects it: src/test/testData, plus the repository's sample app (the one VS and
+// VS Code use) as the project of solutions/SampleApp, next to that folder's SampleApp.sln.
+val testData = layout.buildDirectory.dir("testData")
+val prepareTestData by tasks.registering(Sync::class) {
+    from("src/test/testData")
+    from(rootDir.resolve("../../samples/SampleApp")) {
+        // Without its launch profiles, Rider runs the app with no arguments, so it uses SQLite. With them, Rider
+        // picks a profile itself (it chose Oracle).
+        exclude("bin/**", "obj/**", ".vscode/**", "Properties/launchSettings.json", "*.slnx")
+        into("solutions/SampleApp/SampleApp")
+    }
+    into(testData)
 }
 
 tasks.withType<Test>().configureEach {
+    dependsOn(prepareTestData)
     useTestNG()
     // Test methods live in abstract *TestBase classes; select the concrete per-version classes by name, since
     // class scanning does not pick up inherited TestNG methods.
