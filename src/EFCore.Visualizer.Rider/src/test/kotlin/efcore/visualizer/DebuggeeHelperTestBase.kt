@@ -74,14 +74,32 @@ abstract class DebuggeeHelperTestBase : DebuggerTestBase() {
             assertContains(result.file.readText(), Regex("SEARCH \\w+ USING INDEX IX_Blogs_Rating"))
             result.file.deleteIfExists()
 
-            val error = runCatching { PlatformTestUtil.waitForFuture(DebuggeeEvaluator.getPlanFile(session, "context"), 60_000) }
-                // waitForFuture wraps failures (AssertionError -> ExecutionException -> cause).
-                .exceptionOrNull()?.let { e -> generateSequence(e) { it.cause }.firstOrNull { it is EvaluationException } ?: e }
+            // The user sees the exception's own message, not just its type.
+            val error = evaluationError(DebuggeeEvaluator.getPlanFile(session, "context"))
             println("DebuggeeEvaluator.getPlanFile(context) => $error")
-            assertTrue(error is EvaluationException && "System.ArgumentException" in error.message.orEmpty(), "unexpected: $error")
+            assertContains(error.message.orEmpty(), "Expected an IQueryable but got")
 
-            resumeSession()
+            // Neither a plan nor SQL: both reasons are reported.
+            val both = evaluationError(QueryPlanVisualizer.visualize(session, "context"))
+            println("QueryPlanVisualizer.visualize(context) => $both")
+            assertContains(both.message.orEmpty(), Regex("^Couldn't get the query plan: Expected an IQueryable.* Couldn't get the SQL either: Expected an IQueryable"))
+
+            // Last, since it resumes the session: Continue during an evaluation ends it with a clear message.
+            val abandoned = DebuggeeEvaluator.evaluate(session, "System.Threading.Thread.Sleep(5000)")
+            PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+            session.resume()
+            val continued = evaluationError(abandoned)
+            println("Continue during an evaluation => $continued")
+            assertTrue(continued is NotPausedException, "unexpected: $continued")
         }, true)
+    }
+
+    /** The EvaluationException [future] failed with (waitForFuture wraps it: AssertionError -> ExecutionException -> cause). */
+    private fun evaluationError(future: java.util.concurrent.CompletableFuture<*>): EvaluationException {
+        val error = runCatching { PlatformTestUtil.waitForFuture(future, 60_000) }.exceptionOrNull()
+        val evaluation = error?.let { e -> generateSequence(e) { it.cause }.firstOrNull { it is EvaluationException } }
+        assertTrue(evaluation is EvaluationException, "Expected an EvaluationException but got: $error")
+        return evaluation
     }
 
     /** Rider presents strings as `{string} "value"`. */

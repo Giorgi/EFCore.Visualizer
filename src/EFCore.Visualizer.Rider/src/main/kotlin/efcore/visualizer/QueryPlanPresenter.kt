@@ -14,7 +14,10 @@ import java.nio.file.Files
 open class QueryPlanPresenter {
     open fun show(project: Project, result: VisualizeResult, expression: String) {
         result.warning?.let { notify(project, it, NotificationType.WARNING) }
-        val title = if (result.kind == VisualizeResult.Kind.PLAN) "Query Plan: $expression" else "Query: $expression"
+        val shortExpression =
+            if (expression.codePointCount(0, expression.length) > 40) expression.substring(0, expression.offsetByCodePoints(0, 39)) + "…"
+            else expression
+        val title = if (result.kind == VisualizeResult.Kind.PLAN) "Query Plan: $shortExpression" else "Query: $shortExpression"
         // A file:// URL keeps the templates' relative CSS/JS references working.
         val editor = HTMLEditorProvider.openEditor(project, title, HTMLEditorProvider.Request.url(result.file.toUri().toString()))
         if (editor == null) {
@@ -25,7 +28,8 @@ open class QueryPlanPresenter {
     }
 
     open fun notify(project: Project, message: String, type: NotificationType) {
-        NotificationGroupManager.getInstance().getNotificationGroup("EFCore Visualizer")
+        val group = if (type == NotificationType.ERROR) "EFCore Visualizer errors" else "EFCore Visualizer"
+        NotificationGroupManager.getInstance().getNotificationGroup(group)
             .createNotification("EFCore Visualizer", message, type)
             .notify(project)
     }

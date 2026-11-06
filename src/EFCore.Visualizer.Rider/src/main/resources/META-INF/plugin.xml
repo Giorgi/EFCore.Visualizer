@@ -7,6 +7,8 @@
 
   <extensions defaultExtensionNs="com.intellij">
     <notificationGroup id="EFCore Visualizer" displayType="BALLOON"/>
+    <!-- Errors stay until closed, so they can be read. -->
+    <notificationGroup id="EFCore Visualizer errors" displayType="STICKY_BALLOON"/>
     <applicationService serviceImplementation="efcore.visualizer.QueryPlanPresenter"/>
   </extensions>
 
