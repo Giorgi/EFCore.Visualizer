@@ -80,6 +80,14 @@ abstract class DebuggeeHelperTestBase : DebuggerTestBase() {
             println("DebuggeeEvaluator.getPlanFile(context) => $error")
             assertContains(error.message.orEmpty(), "Expected an IQueryable but got")
 
+            // No plan (the table doesn't exist), but SQL: the SQL page, with the reason as a warning.
+            val fallback = PlatformTestUtil.waitForFuture(QueryPlanVisualizer.visualize(session, "broken"), 60_000)
+            println("QueryPlanVisualizer.visualize(broken) => $fallback")
+            assertEquals(VisualizeResult.Kind.QUERY, fallback.kind)
+            assertContains(fallback.warning.orEmpty(), "MissingTable")
+            assertContains(fallback.file.readText(), "MissingTable")
+            fallback.file.deleteIfExists()
+
             // Neither a plan nor SQL: both reasons are reported.
             val both = evaluationError(QueryPlanVisualizer.visualize(session, "context"))
             println("QueryPlanVisualizer.visualize(context) => $both")
@@ -122,6 +130,7 @@ abstract class DebuggeeHelperTestBase : DebuggerTestBase() {
             // Overlapping visualizations: raised until the last one ends.
             val first = EvaluationTimeout.withRaisedLimit(session) { DebuggeeEvaluator.evaluate(session, "System.Threading.Thread.Sleep(1500)") }
             val second = EvaluationTimeout.withRaisedLimit(session) { DebuggeeEvaluator.evaluate(session, "System.Threading.Thread.Sleep(1500)") }
+            assertEquals(EvaluationTimeout.LIMIT_MS, EvaluationTimeout.currentLimit(session), "not raised while visualizations run")
             PlatformTestUtil.waitForFuture(first, 60_000)
             if (!second.isDone) assertEquals(EvaluationTimeout.LIMIT_MS, limitAfterwards(), "restored while another visualization still runs")
             PlatformTestUtil.waitForFuture(second, 60_000)

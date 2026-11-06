@@ -29,6 +29,8 @@ object QueryPlanVisualizer {
         if (!Files.isRegularFile(helper)) {
             return CompletableFuture.failedFuture(IllegalStateException("The EFCore Visualizer plugin is missing $helper. Reinstall the plugin."))
         }
+        // Set when the visualization was given up (EvaluationTimeout's watchdog): a page that arrives later is deleted.
+        val visualization = java.util.concurrent.atomic.AtomicReference<CompletableFuture<VisualizeResult>>()
         return EvaluationTimeout.withRaisedLimit(session) {
             // Nothing to fall back to when the helper doesn't load: report that on its own.
             DebuggeeEvaluator.loadHelper(session, helper.toString())
@@ -38,7 +40,8 @@ object QueryPlanVisualizer {
                     throw if (cause is NotPausedException) cause else EvaluationException("Couldn't load the visualizer into the app: ${cause.message}", "")
                 }
                 .thenCompose { getPlanOrQuery(session, queryExpression) }
-        }
+                .whenComplete { result, _ -> if (result != null && visualization.get()?.isCompletedExceptionally == true) Files.deleteIfExists(result.file) }
+        }.also(visualization::set)
     }
 
     private fun getPlanOrQuery(session: XDebugSession, queryExpression: String): CompletableFuture<VisualizeResult> =

@@ -77,10 +77,11 @@ abstract class VisualizeActionTestBase : DebuggerTestBase() {
             PlatformTestUtil.waitWithEventsDispatching("'query' did not appear in the variables tree", {
                 val root = tree.root as? XValueContainerNode<*>
                 queryNode = root?.children?.filterIsInstance<XValueNodeImpl>()?.firstOrNull { it.name == "query" }
-                queryNode != null
+                // Wait for its value too, so update() checks it (an unknown value would keep the action enabled anyway).
+                queryNode?.rawValue != null
             }, 60)
             val node = queryNode!!
-            println("Selected node: ${node.name} (${node.valueContainer.javaClass.name})")
+            println("Selected node: ${node.name} (${node.valueContainer.javaClass.name}), shown as: ${node.rawValue}")
             tree.selectionPath = node.path
 
             // Built from the tree component the same way the action system builds a context-menu context,
@@ -108,6 +109,20 @@ abstract class VisualizeActionTestBase : DebuggerTestBase() {
                 result.file.deleteIfExists()
             } finally {
                 Disposer.dispose(disposable)
+            }
+
+            // 5. Offered for a DbSet and an Include; hidden for values that aren't EF Core queries.
+            for ((name, offered) in listOf("blogs" to true, "included" to true, "numbers" to false, "list" to false, "args" to false)) {
+                var other: XValueNodeImpl? = null
+                PlatformTestUtil.waitWithEventsDispatching("'$name' did not appear in the variables tree", {
+                    other = (tree.root as? XValueContainerNode<*>)?.children?.filterIsInstance<XValueNodeImpl>()?.firstOrNull { it.name == name }
+                    other?.rawValue != null
+                }, 60)
+                tree.selectionPath = other!!.path
+                val otherEvent = TestActionEvent.createTestEvent(action, Utils.createAsyncDataContext(tree))
+                action.update(otherEvent)
+                println("'$name' (${other!!.valuePresentation?.type} / ${other!!.rawValue}): enabled=${otherEvent.presentation.isEnabledAndVisible}")
+                assertEquals(offered, otherEvent.presentation.isEnabledAndVisible, "action offered for '$name'")
             }
 
             resumeSession()

@@ -22,8 +22,11 @@ import java.util.concurrent.TimeUnit
 object EvaluationTimeout {
     const val LIMIT_MS = 30_000
 
-    /** Longest a whole visualization may take (helper, plan, SQL fallback, error lookups) before it is given up. */
-    private const val WATCHDOG_MS = 4L * LIMIT_MS
+    /**
+     * Longest a whole visualization may take before it is given up: the helper, the plan and the SQL fallback, each up
+     * to the session's limit, plus time for error lookups. So the user's own (higher) limit is never cut short.
+     */
+    private fun watchdogMs(limitMs: Int) = 3L * limitMs + 15_000
 
     private val log = logger<EvaluationTimeout>()
     @Volatile private var reportedUnavailable = false
@@ -39,18 +42,20 @@ object EvaluationTimeout {
     fun <T> withRaisedLimit(session: XDebugSession, evaluation: () -> CompletableFuture<T>): CompletableFuture<T> {
         val result = CompletableFuture<T>()
         onUiThread {
+            val userLimit = currentLimit(session) ?: LIMIT_MS
             val limit = raise(session)
             result.whenComplete { _, _ -> if (limit != null) onUiThread { restore(session, limit) } }
+            // So a debugger that never answers can't leave the user waiting, or the limit raised.
+            val watchdog = watchdogMs(maxOf(userLimit, LIMIT_MS))
+            AppExecutorUtil.getAppScheduledExecutorService().schedule({
+                result.completeExceptionally(EvaluationException("The debugger didn't answer within ${watchdog / 1000} s.", ""))
+            }, watchdog, TimeUnit.MILLISECONDS)
             try {
                 evaluation().whenComplete { value, error -> if (error != null) result.completeExceptionally(error) else result.complete(value) }
             } catch (e: Throwable) {
                 result.completeExceptionally(e)
             }
         }
-        // So a debugger that never answers can't leave the user waiting, or the limit raised.
-        AppExecutorUtil.getAppScheduledExecutorService().schedule({
-            result.completeExceptionally(EvaluationException("The debugger didn't answer within ${WATCHDOG_MS / 1000} s.", ""))
-        }, WATCHDOG_MS, TimeUnit.MILLISECONDS)
         return result
     }
 

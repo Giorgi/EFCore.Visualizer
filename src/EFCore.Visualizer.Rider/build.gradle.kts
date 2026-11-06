@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
@@ -20,17 +21,28 @@ repositories {
 
 kotlin {
     jvmToolchain(21)
+    // The plugin uses the Kotlin runtime bundled with Rider (kotlin.stdlib.default.dependency=false): 2.1 in 2025.1,
+    // the oldest supported. Compiling against that API keeps newer stdlib calls, which would fail there, out.
+    compilerOptions { apiVersion.set(KotlinVersion.KOTLIN_2_1) }
 }
 
 // Rider's test framework API differs between versions: shared test logic lives in src/test/kotlin, the
 // version-specific bits (test annotations, a few helpers) in src/test/kotlin-<251|253|262>:
 //   251: 2025.1-2025.2 (@TestEnvironment, File test-data marker)   253: 2025.3 (@TestSettings, File marker)
 //   262: 2026.x (@TestSettings, Path marker, getSessionTabIfInitialized)
-val riderVersionParts = providers.gradleProperty("riderVersion").get().split('.').map { it.toInt() }
-val riderMajor = riderVersionParts[0]
+// riderVersion is a release (2025.1.9), a branch EAP (263-EAP-SNAPSHOT, 2026.3-EAP2-SNAPSHOT) or LATEST-EAP-SNAPSHOT.
+val (riderMajor, riderMinor) = providers.gradleProperty("riderVersion").get().let { version ->
+    val match = Regex("""^(\d+)(?:\.(\d+))?""").find(version)
+    val first = match?.groupValues?.get(1)?.toInt()
+    when {
+        first == null -> 9999 to 9                                 // LATEST-EAP-SNAPSHOT: the newest
+        first < 1000 -> (2000 + first / 10) to (first % 10)         // branch number: 263 = 2026.3
+        else -> first to (match!!.groupValues[2].toIntOrNull() ?: 0)
+    }
+}
 val testCompatDir = when {
     riderMajor >= 2026 -> "262"
-    riderVersionParts.getOrElse(1) { 0 } >= 3 -> "253"
+    riderMinor >= 3 -> "253"
     else -> "251"
 }
 sourceSets["test"].kotlin.srcDir("src/test/kotlin-$testCompatDir")
@@ -41,7 +53,7 @@ dependencies {
         jetbrainsRuntime()
         // Embedded browser (JCEF) APIs, used by the plan-tab rendering test: separate modules from 2026.2; part of the
         // core platform jars up to 2026.1.
-        if (riderMajor > 2026 || (riderMajor == 2026 && riderVersionParts.getOrElse(1) { 0 } >= 2)) {
+        if (riderMajor > 2026 || (riderMajor == 2026 && riderMinor >= 2)) {
             bundledModule("intellij.platform.ui.jcef")
             bundledModule("intellij.libraries.jcef")
         }
@@ -75,28 +87,30 @@ intellijPlatform {
 }
 
 // Debugger-agnostic helper laid out like the VSIX: <root>/netcoreapp/<dll> + <root>/Resources/...
-val helperRoot = layout.buildDirectory.dir("helper")
+val coreDir = rootDir.resolve("../EFCore.Visualizer.Core")
+val helperBuild = layout.buildDirectory.dir("helper-build")
 val buildHelper by tasks.registering(Exec::class) {
-    val project = rootDir.resolve("../EFCore.Visualizer.Core/EFCore.Visualizer.Core.csproj")
-    commandLine("dotnet", "build", project.path, "-c", "Release", "-o", helperRoot.get().dir("build").asFile.path)
-    // sync (not copy), so files deleted from Core don't stay in the plugin zip.
-    doLast {
-        sync {
-            from(helperRoot.get().dir("build")) { include("EFCore.Visualizer.Core.dll", "EFCore.Visualizer.Core.pdb") }
-            into(helperRoot.get().dir("netcoreapp"))
-        }
-        sync {
-            from(rootDir.resolve("../EFCore.Visualizer.Core/Resources"))
-            into(helperRoot.get().dir("Resources"))
-        }
+    description = "Builds EFCore.Visualizer.Core, the helper the plugin loads into the debugged app."
+    inputs.files(fileTree(coreDir) { exclude("bin/**", "obj/**", "Resources/**") })
+    outputs.dir(helperBuild)
+    val csproj = coreDir.resolve("EFCore.Visualizer.Core.csproj").path
+    val output = helperBuild.get().asFile.path
+    commandLine("dotnet", "build", csproj, "-c", "Release", "-o", output)
+}
+// A Sync (not a copy), so files deleted from Core don't stay in the plugin zip.
+val helperRoot = layout.buildDirectory.dir("helper")
+val prepareHelper by tasks.registering(Sync::class) {
+    from(buildHelper) {
+        include("EFCore.Visualizer.Core.dll", "EFCore.Visualizer.Core.pdb")
+        into("netcoreapp")
     }
+    from(coreDir.resolve("Resources")) { into("Resources") }
+    into(helperRoot)
 }
 
 // Ship the helper inside the plugin, mirroring the VSIX: <plugin>/netcoreapp/*.dll and <plugin>/Resources/**
 tasks.withType<PrepareSandboxTask>().configureEach {
-    dependsOn(buildHelper)
-    from(helperRoot) {
-        include("netcoreapp/**", "Resources/**")
+    from(prepareHelper) {
         into(intellijPlatform.projectName.map { it })
     }
 }

@@ -5,6 +5,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.fileEditor.impl.HTMLEditorProvider
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.xml.util.XmlStringUtil
 import java.nio.file.Files
 
 /**
@@ -30,7 +31,8 @@ open class QueryPlanPresenter {
     open fun notify(project: Project, message: String, type: NotificationType) {
         val group = if (type == NotificationType.ERROR) "EFCore Visualizer errors" else "EFCore Visualizer"
         NotificationGroupManager.getInstance().getNotificationGroup(group)
-            .createNotification("EFCore Visualizer", message, type)
+            // The content is HTML: escape it, or "DbSet<Blog>" and "Rating < 3" in an EF error would be cut off.
+            .createNotification("EFCore Visualizer", XmlStringUtil.escapeString(message).replace("\n", "<br>"), type)
             .notify(project)
     }
 }
