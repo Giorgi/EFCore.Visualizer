@@ -2,7 +2,9 @@
 
 # Entity Framework Core Query Plan Visualizer
 
-View Entity Framework Core query plan directly inside Visual Studio and VS Code.
+View Entity Framework Core query plan directly inside Visual Studio, VS Code and JetBrains Rider.
+
+**Jump to:** [Visual Studio](#usage) · [VS Code](#visual-studio-code) · [JetBrains Rider](#jetbrains-rider)
 
 [![Visual Studio Marketplace Version](https://badgen.net/vs-marketplace/v/GiorgiDalakishvili.EFCoreVisualizer?label=Download%20Now&color=purple)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
 [![Visual Studio Marketplace Downloads](https://badgen.net/vs-marketplace/d/GiorgiDalakishvili.EFCoreVisualizer)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.EFCoreVisualizer)
@@ -66,6 +68,12 @@ The query plan includes Actual IO stats, Outline data, Projections, and Predicat
 The visualizer is also available for VS Code. While you debug with Microsoft's C# extension, hover over a query in **Variables** or **Watch** and click the **Visualize Query Plan** button at the end of its row, or right-click the query and choose **Visualize Query Plan**. The plan opens in a tab beside the editor, with the same plan pages as in Visual Studio. The tab's title bar has a **Refresh** button and a **Copy SQL** button, which copies the query's SQL with its parameters. It requires **VS Code 1.90 or newer** and supports **EF Core 7 or newer**.
 
 See the VS Code extension's [README](src/EFCore.Visualizer.VSCode/README.md) for details.
+
+## JetBrains Rider
+
+The visualizer is also available for Rider. While you debug, right-click a query in **Variables** or **Watches** and choose **Visualize Query Plan**. The plan opens in an editor tab, with the same plan pages as in Visual Studio. Each variable gets its own tab, and visualizing it again shows the new plan when the query changed. It requires **Rider 2025.1 or newer** and supports **EF Core 7 or newer**.
+
+See the Rider plugin's [README](src/EFCore.Visualizer.Rider/README.md) for details.
 
 ## Known Issues (Visual Studio):
 
