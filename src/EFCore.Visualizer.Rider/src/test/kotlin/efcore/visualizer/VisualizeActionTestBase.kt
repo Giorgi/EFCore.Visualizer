@@ -17,7 +17,9 @@ import com.intellij.xdebugger.impl.ui.tree.nodes.XValueNodeImpl
 import com.jetbrains.rider.debugger.settings.DotNetDebuggerSettings
 import com.jetbrains.rider.test.scriptingApi.resumeSession
 import com.jetbrains.rider.test.scriptingApi.waitForPause
+import com.intellij.xdebugger.XDebugSession
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.readText
 import kotlin.test.assertContains
@@ -32,14 +34,30 @@ import kotlin.test.assertTrue
  */
 abstract class VisualizeActionTestBase : SampleAppDebuggerTestBase() {
 
-    private class RecordingPresenter : QueryPlanPresenter() {
-        val shown = CompletableFuture<Pair<VisualizeResult, String>>()
-        override fun show(project: Project, result: VisualizeResult, expression: String) {
-            shown.complete(result to expression)
+    /** Records what the action asks for. [tabSql]: the SQL of a plan tab the variable already has, if any. */
+    private class RecordingPresenter(private val tabSql: String? = null) : QueryPlanPresenter() {
+        val checked = CompletableFuture<String?>()
+        val shown = CompletableFuture<Triple<VisualizeResult, String, String?>>()
+        val shows = AtomicInteger()
+        override fun focusIfUnchanged(project: Project, session: XDebugSession, expression: String, sql: String?): Boolean {
+            checked.complete(sql)
+            return tabSql != null && sql == tabSql
+        }
+        override fun show(project: Project, result: VisualizeResult, expression: String, session: XDebugSession, sql: String?) {
+            shows.incrementAndGet()
+            shown.complete(Triple(result, expression, sql))
         }
         override fun notify(project: Project, message: String, type: NotificationType) {
-            shown.completeExceptionally(AssertionError("Action reported $type instead of showing a page: $message"))
+            val error = AssertionError("Action reported $type instead of showing a page: $message")
+            checked.completeExceptionally(error)
+            shown.completeExceptionally(error)
         }
+    }
+
+    /** Dispatches UI events for [seconds], so work the action may still start gets the chance to. */
+    private fun settle(seconds: Long = 3) {
+        val until = System.currentTimeMillis() + seconds * 1000
+        PlatformTestUtil.waitWithEventsDispatching("settle", { System.currentTimeMillis() > until }, seconds.toInt() + 5)
     }
 
     // Called from the version-specific @Test in VisualizeActionTest (Rider reads test annotations from the declaring class).
@@ -85,20 +103,40 @@ abstract class VisualizeActionTestBase : SampleAppDebuggerTestBase() {
             action.update(event)
             assertTrue(event.presentation.isEnabledAndVisible, "action is disabled/hidden for the selected 'query' node")
 
-            // 4. actionPerformed(): evaluation expression -> helper -> plan, handed to the presenter.
+            // 4. actionPerformed(): evaluation expression -> helper -> plan, handed to the presenter. Clicked twice: the
+            //    second click, while the first one runs, must not get (and run) the query again.
             val presenter = RecordingPresenter()
             val disposable = Disposer.newDisposable()
+            val planSql: String
             try {
                 ApplicationManager.getApplication().replaceService(QueryPlanPresenter::class.java, presenter, disposable)
                 action.actionPerformed(event)
-                val (result, expression) = PlatformTestUtil.waitForFuture(presenter.shown, 60_000)
-                println("Action showed: $result for '$expression'")
+                action.actionPerformed(event)
+                val (result, expression, sql) = PlatformTestUtil.waitForFuture(presenter.shown, 60_000)
+                println("Action showed: $result for '$expression', SQL: $sql")
                 assertEquals("query", expression)
                 assertEquals(VisualizeResult.Kind.PLAN, result.kind)
                 assertContains(result.file.readText(), Regex("SEARCH \\w+ USING INDEX IX_Blogs_Rating"))
+                planSql = assertNotNull(sql, "no SQL for the plan")
+                assertContains(planSql, "FROM \"Blogs\"")
                 result.file.deleteIfExists()
+                settle()
+                assertEquals(1, presenter.shows.get(), "a second click got the plan again")
             } finally {
                 Disposer.dispose(disposable)
+            }
+
+            // 4b. Again, with the variable's tab already showing the plan for this SQL: only that tab is focused.
+            val reusing = RecordingPresenter(tabSql = planSql)
+            val reuseDisposable = Disposer.newDisposable()
+            try {
+                ApplicationManager.getApplication().replaceService(QueryPlanPresenter::class.java, reusing, reuseDisposable)
+                action.actionPerformed(event)
+                assertEquals(planSql, PlatformTestUtil.waitForFuture(reusing.checked, 60_000), "the SQL changed between two clicks")
+                settle()
+                assertEquals(0, reusing.shows.get(), "an up-to-date tab got a new plan")
+            } finally {
+                Disposer.dispose(reuseDisposable)
             }
 
             // 5. Offered for a DbSet and an Include; hidden for values that aren't EF Core queries.

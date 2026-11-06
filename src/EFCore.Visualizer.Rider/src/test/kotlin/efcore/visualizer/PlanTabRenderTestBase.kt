@@ -57,7 +57,7 @@ abstract class PlanTabRenderTestBase : SampleAppDebuggerTestBase() {
             val shown = CompletableFuture<VisualizeResult>()
             val disposable = Disposer.newDisposable()
             ApplicationManager.getApplication().replaceService(QueryPlanPresenter::class.java, object : QueryPlanPresenter() {
-                override fun show(project: Project, result: VisualizeResult, expression: String) { shown.complete(result) }
+                override fun show(project: Project, result: VisualizeResult, expression: String, session: com.intellij.xdebugger.XDebugSession, sql: String?) { shown.complete(result) }
                 override fun notify(project: Project, message: String, type: NotificationType) { shown.completeExceptionally(AssertionError(message)) }
             }, disposable)
             action.actionPerformed(TestActionEvent.createTestEvent(action, Utils.createAsyncDataContext(tree)))

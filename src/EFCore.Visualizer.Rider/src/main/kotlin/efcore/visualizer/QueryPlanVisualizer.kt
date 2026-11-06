@@ -44,6 +44,18 @@ object QueryPlanVisualizer {
         }.also(visualization::set)
     }
 
+    /**
+     * The SQL of [queryExpression] now, parameter values included, or null when it can't be had. Doesn't run the
+     * query: this tells whether a plan already shown for the variable is still up to date.
+     */
+    fun queryString(session: XDebugSession, queryExpression: String): CompletableFuture<String?> {
+        val helper = runCatching { helperPath() }.getOrNull()?.takeIf { Files.isRegularFile(it) }
+            ?: return CompletableFuture.completedFuture(null)
+        return EvaluationTimeout.withRaisedLimit(session) {
+            DebuggeeEvaluator.loadHelper(session, helper.toString()).thenCompose { DebuggeeEvaluator.getQueryString(session, queryExpression) }
+        }.handle { sql, _ -> sql }
+    }
+
     private fun getPlanOrQuery(session: XDebugSession, queryExpression: String): CompletableFuture<VisualizeResult> =
         DebuggeeEvaluator.getPlanFile(session, queryExpression)
             .thenApply { VisualizeResult(VisualizeResult.Kind.PLAN, Path.of(it)) }

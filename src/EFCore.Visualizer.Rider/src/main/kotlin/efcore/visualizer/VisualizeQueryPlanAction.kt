@@ -53,28 +53,49 @@ class VisualizeQueryPlanAction : DumbAwareAction() {
             (shown == null || QUERY_TYPE.containsMatchIn(shown))
     }
 
+    /** Variables whose plan is being fetched; UI thread only. A second click meanwhile is ignored: starting another run
+     * would run the query twice. */
+    private val running = HashSet<Pair<XDebugSession, String>>()
+
     override fun actionPerformed(e: AnActionEvent) {
         val project = projectOf(e) ?: return
         val session = sessionOf(e, project) ?: return
         val node = XDebuggerTreeActionBase.getSelectedNode(e.dataContext) ?: return
         val presenter = service<QueryPlanPresenter>()
-        // Results arrive on a background thread; show them on the UI thread, unless the project closed meanwhile.
-        fun onUiThread(block: () -> Unit) = ApplicationManager.getApplication().invokeLater { if (!project.isDisposed) block() }
+        val app = ApplicationManager.getApplication()
 
         node.valueContainer.calculateEvaluationExpression().onProcessed { xExpression ->
             // No guessing from the node's name: for a member of another value, that name alone means something else.
             val expression = xExpression?.expression?.takeIf { it.isNotBlank() }
-            if (expression == null) {
-                onUiThread { presenter.notify(project, "Can't build an expression for the selected value.", NotificationType.ERROR) }
-                return@onProcessed
+            app.invokeLater {
+                when {
+                    project.isDisposed -> {}
+                    expression == null -> presenter.notify(project, "Can't build an expression for the selected value.", NotificationType.ERROR)
+                    running.add(session to expression) -> visualize(project, session, expression, presenter)
+                }
             }
-            QueryPlanVisualizer.visualize(session, expression).whenComplete { result, error ->
-                ApplicationManager.getApplication().invokeLater {
-                    when {
-                        // Nobody will see the page: don't leave it in the temp folder.
-                        project.isDisposed -> result?.let { Files.deleteIfExists(it.file) }
-                        error != null -> presenter.notify(project, error.unwrap().message ?: error.toString(), NotificationType.ERROR)
-                        else -> presenter.show(project, result, expression)
+        }
+    }
+
+    /** Like the VS Code extension: if the variable's tab shows the plan for the query's current SQL, just switch to it. */
+    private fun visualize(project: Project, session: XDebugSession, expression: String, presenter: QueryPlanPresenter) {
+        val app = ApplicationManager.getApplication()
+        val variable = session to expression
+        QueryPlanVisualizer.queryString(session, expression).whenComplete { sql, _ ->
+            app.invokeLater {
+                if (project.isDisposed || presenter.focusIfUnchanged(project, session, expression, sql)) {
+                    running.remove(variable)
+                    return@invokeLater
+                }
+                QueryPlanVisualizer.visualize(session, expression).whenComplete { result, error ->
+                    app.invokeLater {
+                        running.remove(variable)
+                        when {
+                            // Nobody will see the page: don't leave it in the temp folder.
+                            project.isDisposed -> result?.let { Files.deleteIfExists(it.file) }
+                            error != null -> presenter.notify(project, error.unwrap().message ?: error.toString(), NotificationType.ERROR)
+                            else -> presenter.show(project, result, expression, session, sql)
+                        }
                     }
                 }
             }

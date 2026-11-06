@@ -42,6 +42,9 @@ object DebuggeeEvaluator {
     fun getQueryFile(session: XDebugSession, queryExpression: String): CompletableFuture<String> =
         evaluateString(session, "$HELPER_TYPE.GetQueryFile($queryExpression)")
 
+    fun getQueryString(session: XDebugSession, queryExpression: String): CompletableFuture<String> =
+        evaluateString(session, "$HELPER_TYPE.GetQueryString($queryExpression)")
+
     fun csharpString(value: String) = "@\"" + value.replace("\"", "\"\"") + "\""
 
     /** Evaluates [expression]; completes with the rendered value, or exceptionally with [EvaluationException]. */

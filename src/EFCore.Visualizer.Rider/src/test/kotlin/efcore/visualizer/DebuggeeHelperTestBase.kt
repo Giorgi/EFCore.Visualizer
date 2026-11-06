@@ -67,6 +67,17 @@ abstract class DebuggeeHelperTestBase : SampleAppDebuggerTestBase() {
             println("DebuggeeEvaluator.getPlanFile(context) => $error")
             assertContains(error.message.orEmpty(), "Expected an IQueryable but got")
 
+            // The SQL a plan tab is compared with: the same while nothing changes, different once a parameter does.
+            val sqlBefore = PlatformTestUtil.waitForFuture(QueryPlanVisualizer.queryString(session, "parameterized"), 60_000)
+            assertEquals(sqlBefore, PlatformTestUtil.waitForFuture(QueryPlanVisualizer.queryString(session, "parameterized"), 60_000))
+            PlatformTestUtil.waitForFuture(DebuggeeEvaluator.evaluate(session, "minRating = 4"), 60_000)
+            val sqlAfter = PlatformTestUtil.waitForFuture(QueryPlanVisualizer.queryString(session, "parameterized"), 60_000)
+            println("queryString(parameterized): before ${sqlBefore?.lines()?.firstOrNull()}, after ${sqlAfter?.lines()?.firstOrNull()}")
+            assertNotNull(sqlBefore, "no SQL for 'parameterized'")
+            assertTrue(sqlBefore != sqlAfter, "the SQL didn't change with its parameter")
+            PlatformTestUtil.waitForFuture(DebuggeeEvaluator.evaluate(session, "minRating = 3"), 60_000)
+            assertEquals(null, PlatformTestUtil.waitForFuture(QueryPlanVisualizer.queryString(session, "list"), 60_000), "SQL for a List")
+
             // No plan (the table doesn't exist), but SQL: the SQL page, with the reason as a warning.
             val fallback = PlatformTestUtil.waitForFuture(QueryPlanVisualizer.visualize(session, "broken"), 60_000)
             println("QueryPlanVisualizer.visualize(broken) => $fallback")
