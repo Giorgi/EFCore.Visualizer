@@ -8,6 +8,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.xdebugger.XDebugSession
+import com.jetbrains.rider.debugger.settings.DotNetDebuggerSettings
 import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.impl.ui.tree.XDebuggerTree
 import com.intellij.xdebugger.impl.ui.tree.actions.XDebuggerTreeActionBase
@@ -64,6 +65,14 @@ class VisualizeQueryPlanAction : DumbAwareAction() {
         val presenter = service<QueryPlanPresenter>()
         val app = ApplicationManager.getApplication()
 
+        // The helper is called like a method in Watches: Rider refuses that with this setting off ("Implicit evaluation
+        // is disabled").
+        if (!DotNetDebuggerSettings.instance.allowImplicitTargetInvoke) {
+            presenter.notify(project, "Turn on \"Allow property evaluations and other implicit function calls\" in " +
+                "Settings | Build, Execution, Deployment | Debugger: the visualizer calls methods in the app to get the plan.", NotificationType.ERROR)
+            return
+        }
+
         node.valueContainer.calculateEvaluationExpression().onProcessed { xExpression ->
             // No guessing from the node's name: for a member of another value, that name alone means something else.
             val expression = xExpression?.expression?.takeIf { it.isNotBlank() }
@@ -94,6 +103,9 @@ class VisualizeQueryPlanAction : DumbAwareAction() {
                             // Nobody will see the page: don't leave it in the temp folder.
                             project.isDisposed -> result?.let { Files.deleteIfExists(it.file) }
                             error != null -> presenter.notify(project, error.unwrap().message ?: error.toString(), NotificationType.ERROR)
+                            // Written on the machine the app runs on, which isn't this one.
+                            !Files.isRegularFile(result.file) ->
+                                presenter.notify(project, "The page was written where the app runs, as ${result.file}. ${QueryPlanVisualizer.REMOTE_HINT}", NotificationType.ERROR)
                             else -> presenter.show(project, result, expression, session, sql)
                         }
                     }

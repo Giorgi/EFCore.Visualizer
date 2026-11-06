@@ -139,6 +139,29 @@ abstract class VisualizeActionTestBase : SampleAppDebuggerTestBase() {
                 Disposer.dispose(reuseDisposable)
             }
 
+            // 4c. The app loaded the helper from its per-version copy, not from the plugin's folder (HelperCopy).
+            val location = PlatformTestUtil.waitForFuture(DebuggeeEvaluator.evaluate(session,
+                "typeof(${DebuggeeEvaluator.HELPER_TYPE}).Assembly.Location"), 60_000)
+            println("Helper loaded from: $location")
+            val copies = java.nio.file.Path.of(com.intellij.openapi.application.PathManager.getSystemPath(), "efcore-visualizer").toString()
+            assertContains(location, copies)
+
+            // 4d. With method calls in watches off, the action says which setting to turn on.
+            val refused = RecordingPresenter()
+            val refusedDisposable = Disposer.newDisposable()
+            try {
+                ApplicationManager.getApplication().replaceService(QueryPlanPresenter::class.java, refused, refusedDisposable)
+                DotNetDebuggerSettings.instance.allowImplicitTargetInvoke = false
+                action.actionPerformed(event)
+                val message = runCatching { PlatformTestUtil.waitForFuture(refused.checked, 60_000) }.exceptionOrNull()
+                    ?.let { e -> generateSequence(e) { it.cause }.mapNotNull { it.message }.firstOrNull { "Allow property" in it } }
+                println("With method calls off: $message")
+                assertContains(message.orEmpty(), "Allow property evaluations and other implicit function calls")
+            } finally {
+                DotNetDebuggerSettings.instance.allowImplicitTargetInvoke = true
+                Disposer.dispose(refusedDisposable)
+            }
+
             // 5. Offered for a DbSet and an Include; hidden for values that aren't EF Core queries.
             for ((name, offered) in listOf("blogs" to true, "included" to true, "numbers" to false, "list" to false, "args" to false)) {
                 var other: XValueNodeImpl? = null

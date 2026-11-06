@@ -20,15 +20,22 @@ object QueryPlanVisualizer {
         return Path.of(jar).parent.parent.resolve("netcoreapp/EFCore.Visualizer.Core.dll")
     }
 
+    /** The helper to load into the app: a per-version copy of the plugin's (see HelperCopy). */
+    private fun helperToLoad(): Path {
+        val helper = helperPath()
+        check(Files.isRegularFile(helper)) { "The EFCore Visualizer plugin is missing $helper. Reinstall the plugin." }
+        return HelperCopy.of(helper)
+    }
+
+    /** Shown with load failures and missing pages: the helper and the pages are files on the IDE's machine. */
+    const val REMOTE_HINT = "Debugging an app in Docker, WSL or on another machine isn't supported yet."
+
     /**
      * Loads the helper into the debuggee and asks it for the plan of [queryExpression]. Like the Visual Studio
      * visualizer, falls back to the SQL page (with a warning) when the plan cannot be produced.
      */
     fun visualize(session: XDebugSession, queryExpression: String): CompletableFuture<VisualizeResult> {
-        val helper = runCatching { helperPath() }.getOrElse { return CompletableFuture.failedFuture(it) }
-        if (!Files.isRegularFile(helper)) {
-            return CompletableFuture.failedFuture(IllegalStateException("The EFCore Visualizer plugin is missing $helper. Reinstall the plugin."))
-        }
+        val helper = runCatching { helperToLoad() }.getOrElse { return CompletableFuture.failedFuture(it) }
         // Set when the visualization was given up (EvaluationTimeout's watchdog): a page that arrives later is deleted.
         val visualization = java.util.concurrent.atomic.AtomicReference<CompletableFuture<VisualizeResult>>()
         return EvaluationTimeout.withRaisedLimit(session) {
@@ -37,7 +44,10 @@ object QueryPlanVisualizer {
                 .exceptionally {
                     val cause = it.unwrap()
                     // "The debugger continued ..." isn't a load failure: report it as it is.
-                    throw if (cause is NotPausedException) cause else EvaluationException("Couldn't load the visualizer into the app: ${cause.message}", "")
+                    if (cause is NotPausedException) throw cause
+                    // An app that runs elsewhere can't open the helper's path on this machine.
+                    val missing = Regex("Could not load file|FileNotFound|DirectoryNotFound|Could not find").containsMatchIn(cause.message.orEmpty())
+                    throw EvaluationException("Couldn't load the visualizer into the app: ${cause.message}" + (if (missing) " $REMOTE_HINT" else ""), "")
                 }
                 .thenCompose { getPlanOrQuery(session, queryExpression) }
                 .whenComplete { result, _ -> if (result != null && visualization.get()?.isCompletedExceptionally == true) Files.deleteIfExists(result.file) }
@@ -49,8 +59,7 @@ object QueryPlanVisualizer {
      * query: this tells whether a plan already shown for the variable is still up to date.
      */
     fun queryString(session: XDebugSession, queryExpression: String): CompletableFuture<String?> {
-        val helper = runCatching { helperPath() }.getOrNull()?.takeIf { Files.isRegularFile(it) }
-            ?: return CompletableFuture.completedFuture(null)
+        val helper = runCatching { helperToLoad() }.getOrElse { return CompletableFuture.completedFuture(null) }
         return EvaluationTimeout.withRaisedLimit(session) {
             DebuggeeEvaluator.loadHelper(session, helper.toString()).thenCompose { DebuggeeEvaluator.getQueryString(session, queryExpression) }
         }.handle { sql, _ -> sql }

@@ -55,7 +55,8 @@ abstract class DebuggeeHelperTestBase : SampleAppDebuggerTestBase() {
             queryPath.delete()
             planPath.delete()
 
-            // The plugin's own path: XDebuggerEvaluator + presentation rendering, as used by the menu action.
+            // The plugin's own path: XDebuggerEvaluator + presentation rendering, as used by the menu action. It loads the
+            // helper's copy (HelperCopy) into an app that already has the plugin's DLL loaded, as after a plugin update.
             val result = PlatformTestUtil.waitForFuture(QueryPlanVisualizer.visualize(session, "query"), 60_000)
             println("QueryPlanVisualizer.visualize(query) => $result")
             assertEquals(VisualizeResult.Kind.PLAN, result.kind)

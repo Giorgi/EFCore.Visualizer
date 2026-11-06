@@ -33,6 +33,7 @@ object DebuggeeEvaluator {
     const val HELPER_TYPE = "IQueryableObjectSource.QueryPlanHelper"
     private val TIMED_OUT = Regex("""^Timed out after (\d+) ms""")
 
+    /** Loads the helper. Also works when the app already loaded it from another path (an older plugin version's copy). */
     fun loadHelper(session: XDebugSession, helperPath: String): CompletableFuture<String> =
         evaluate(session, "System.Reflection.Assembly.LoadFrom(${csharpString(helperPath)})")
 
