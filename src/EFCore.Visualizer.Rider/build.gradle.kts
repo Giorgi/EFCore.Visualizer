@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.intellij.platform")
 }
 
-group = "efcore.visualizer"
+group = "dev.giorgi.efcore.visualizer"
 version = "0.0.1"
 
 repositories {
