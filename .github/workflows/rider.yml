@@ -35,8 +35,17 @@ jobs:
 
       # The sample app targets net8.0; EFCore.Visualizer.Core (net6) builds with the same SDK.
       - uses: actions/setup-dotnet@v6
+        id: dotnet
         with:
           dotnet-version: 8.0.x
+
+      # The runner also has newer SDKs, and Rider uses the newest: Rider 2025.1 can't load a solution with the MSBuild
+      # of .NET 10+ ("Unknown tools version: 18.x"). Pin the test solution to the SDK above. It goes next to the
+      # solution, which the tests copy to a temporary folder.
+      - name: Pin the test solution's .NET SDK
+        run: |
+          echo '{ "sdk": { "version": "${{ steps.dotnet.outputs.dotnet-version }}", "rollForward": "latestPatch" } }' > src/test/testData/solutions/SampleApp/global.json
+          cat src/test/testData/solutions/SampleApp/global.json
 
       # Gradle runs on it, and kotlin.jvmToolchain(21) finds it, so the foojay resolver doesn't download another.
       - uses: actions/setup-java@v6
