@@ -2,7 +2,71 @@
   <id>dev.giorgi.efcore.visualizer</id>
   <name>EFCore Visualizer</name>
   <vendor url="https://github.com/Giorgi/EFCore.Visualizer">Giorgi Dalakishvili</vendor>
-  <description>View Entity Framework Core query plans while debugging.</description>
+  <!-- Shown on the Marketplace and in Settings | Plugins. Adapted from the VS Code extension's README. -->
+  <description><![CDATA[
+<p>View the execution plan of an Entity Framework Core query while you debug, without leaving Rider.
+Supports SQL Server, PostgreSQL, Oracle and SQLite.</p>
+
+<p>This is the Rider version of the <a href="https://github.com/Giorgi/EFCore.Visualizer">EFCore Visualizer</a>
+for Visual Studio. It shows the same plan pages.</p>
+
+<p><b>Requirements</b></p>
+<ul>
+  <li>Rider 2025.1 or newer.</li>
+  <li>An app that uses EF Core 7 or newer, on .NET 6 or newer.</li>
+  <li><b>Allow property evaluations and other implicit function calls</b> turned on, in Settings |
+    Build, Execution, Deployment | Debugger. It's on by default.</li>
+</ul>
+
+<p><b>Usage</b></p>
+<ol>
+  <li>Debug your app and pause it, for example at a breakpoint, where a query is in scope.</li>
+  <li>In <b>Variables</b> or <b>Watches</b>, right-click the query (an <code>IQueryable</code> from EF Core, or a
+    <code>DbSet</code>) and choose <b>Visualize Query Plan</b>.</li>
+</ol>
+<p>The plan opens in an editor tab. The menu item appears only on EF Core queries, whatever the variable's
+declared type.</p>
+<ul>
+  <li>Each variable gets its own tab, so you can compare plans side by side.</li>
+  <li>Visualizing the same variable again brings its tab to the front. If the query changed in the meantime
+    (another <code>Where</code> or <code>OrderBy</code>, a new query assigned, a different parameter value), the
+    tab gets the new plan.</li>
+</ul>
+
+<p><b>Important: the query runs</b></p>
+<p>For SQL Server, PostgreSQL and Oracle, the plugin shows the <i>actual</i> plan, so it <b>runs the query</b> in
+your app, on your app's connection and transaction. Getting the plan takes as long as the query, and your app stays
+paused until it finishes. Rider stops evaluations after 1 second by default; while it gets a plan, the plugin
+raises that limit to 30 seconds for the debug session (or keeps yours, if it's higher). For SQLite, the plugin only
+asks for the estimated plan (<code>EXPLAIN QUERY PLAN</code>), so the query doesn't run.</p>
+
+<p><b>When there's no plan</b></p>
+<p>If the plugin can't get the plan, a short warning says why, and the tab shows the query's SQL instead.
+Visualizing the variable again tries the plan again.</p>
+
+<p><b>Known issues</b></p>
+<ul>
+  <li>Your app must run on the same machine as Rider: debugging an app in Docker, WSL or on another machine isn't
+    supported yet. .NET Framework apps aren't supported.</li>
+  <li>If your app uses Application Insights, getting the plan can fail with "Cannot evaluate expression since the
+    function evaluation requires all threads to run". The same happens in Visual Studio
+    (<a href="https://github.com/Giorgi/EFCore.Visualizer/issues/28">#28</a>). Disable Application Insights while
+    debugging.</li>
+</ul>
+]]></description>
+
+  <change-notes><![CDATA[
+<p><b>1.0.0</b>: first release.</p>
+<ul>
+  <li><b>Visualize Query Plan</b> in the Variables and Watches context menu, for EF Core queries and DbSets.</li>
+  <li>Plans for SQL Server, PostgreSQL, Oracle and SQLite, the same pages as the Visual Studio extension. When
+    there's no plan, the query's SQL, with the reason.</li>
+  <li>One tab per variable, reused while its query is unchanged.</li>
+  <li>Progress with the elapsed time while a plan is fetched. The debugger's evaluation limit is raised to 30
+    seconds meanwhile.</li>
+  <li>Rider 2025.1 and newer.</li>
+</ul>
+]]></change-notes>
   <depends>com.intellij.modules.rider</depends>
 
   <extensions defaultExtensionNs="com.intellij">

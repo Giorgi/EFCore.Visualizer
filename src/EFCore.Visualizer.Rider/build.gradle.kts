@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.giorgi.efcore.visualizer"
-version = "0.0.1"
+version = "1.0.0"
 
 repositories {
     maven("https://cache-redirector.jetbrains.com/intellij-dependencies")
