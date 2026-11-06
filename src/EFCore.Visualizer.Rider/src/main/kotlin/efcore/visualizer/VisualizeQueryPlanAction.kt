@@ -96,7 +96,7 @@ class VisualizeQueryPlanAction : DumbAwareAction() {
                     running.remove(variable)
                     return@invokeLater
                 }
-                QueryPlanVisualizer.visualize(session, expression).whenComplete { result, error ->
+                PlanProgress.whileRunning(project, expression, QueryPlanVisualizer.visualize(session, expression)).whenComplete { result, error ->
                     app.invokeLater {
                         running.remove(variable)
                         when {
