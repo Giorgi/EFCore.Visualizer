@@ -15,11 +15,8 @@ import com.intellij.xdebugger.impl.ui.tree.actions.XDebuggerTreeActionBase
 import com.intellij.xdebugger.impl.ui.tree.nodes.XValueContainerNode
 import com.intellij.xdebugger.impl.ui.tree.nodes.XValueNodeImpl
 import com.jetbrains.rider.debugger.settings.DotNetDebuggerSettings
-import com.jetbrains.rider.test.base.DebuggerTestBase
 import com.jetbrains.rider.test.scriptingApi.resumeSession
-import com.jetbrains.rider.test.scriptingApi.toggleBreakpoint
 import com.jetbrains.rider.test.scriptingApi.waitForPause
-import org.testng.annotations.AfterMethod
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.readText
@@ -33,8 +30,7 @@ import kotlin.test.assertTrue
  * Drives VisualizeQueryPlanAction exactly as the Variables context menu would: registered in XDebugger.ValueGroup,
  * update() on a selected "query" node, then actionPerformed(). Only the presenter (browser tab) is replaced.
  */
-abstract class VisualizeActionTestBase : DebuggerTestBase() {
-    override val projectName = "SampleApp"
+abstract class VisualizeActionTestBase : SampleAppDebuggerTestBase() {
 
     private class RecordingPresenter : QueryPlanPresenter() {
         val shown = CompletableFuture<Pair<VisualizeResult, String>>()
@@ -48,17 +44,11 @@ abstract class VisualizeActionTestBase : DebuggerTestBase() {
 
     // Called from the version-specific @Test in VisualizeActionTest (Rider reads test annotations from the declaring class).
     protected fun runVariablesContextMenuActionShowsPlanForSelectedQuery() {
-        val programCs = SampleApp.programCs
-        val line = programCs.readLines().indexOfFirst { "// BREAKPOINT" in it } + 1
-
         // The visualizer relies on method calls in watches; Rider's own default allows them (the test framework
-        // switches them off for its tests, hence RiderCompat.enableMethodCalls below).
+        // switches them off for its tests, hence stopAtBreakpoint).
         assertTrue(DotNetDebuggerSettings().allowImplicitTargetInvoke, "Rider's default disallows method calls in watches")
 
-        testDebugProgram({
-            RiderCompat.enableMethodCalls()
-            toggleBreakpoint(project, "SampleApp/Program.cs", line)
-        }, {
+        testDebugProgram({ stopAtBreakpoint() }, {
             waitForPause()
 
             // 1. Registered in the debugger value context menu.
@@ -127,10 +117,5 @@ abstract class VisualizeActionTestBase : DebuggerTestBase() {
 
             resumeSession()
         }, true)
-    }
-
-    @AfterMethod(alwaysRun = true)
-    fun restoreDebuggerSettings() {
-        RiderCompat.disableMethodCalls()
     }
 }

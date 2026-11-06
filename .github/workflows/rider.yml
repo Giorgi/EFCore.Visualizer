@@ -1,0 +1,76 @@
+name: Rider plugin
+
+on:
+  push:
+    paths: [ 'src/EFCore.Visualizer.Rider/**', 'src/EFCore.Visualizer.Core/**', 'samples/SampleApp/**', '.github/workflows/rider.yml' ]
+  pull_request:
+    paths: [ 'src/EFCore.Visualizer.Rider/**', 'src/EFCore.Visualizer.Core/**', 'samples/SampleApp/**', '.github/workflows/rider.yml' ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # The oldest Rider the plugin supports (sinceBuild 251) and the newest. Each job runs the integration tests
+        # (a real Rider debugging samples/SampleApp) and the Plugin Verifier against that same Rider, so each job
+        # downloads one Rider SDK (about 4 GB).
+        rider: [ 2025.1.9, 2026.2.4 ]
+    name: test (Rider ${{ matrix.rider }})
+    defaults:
+      run:
+        working-directory: src/EFCore.Visualizer.Rider
+    steps:
+      - uses: actions/checkout@v7
+
+      # The Rider SDK takes about 10 GB unpacked; make room by removing preinstalled toolchains the build doesn't use.
+      - name: Free disk space
+        working-directory: .
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/share/swift
+          df -h /
+
+      # The sample app targets net8.0; EFCore.Visualizer.Core (net6) builds with the same SDK.
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      # Gradle runs on it, and kotlin.jvmToolchain(21) finds it, so the foojay resolver doesn't download another.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # The plan tab test renders the page in Rider's embedded browser (JCEF), which needs a display: xvfb-run gives
+      # it one (without it, that test is skipped).
+      - name: Test
+        run: xvfb-run -a ./gradlew test -PriderVersion=${{ matrix.rider }} --console=plain
+
+      - name: Plugin Verifier
+        run: ./gradlew verifyPlugin -PriderVersion=${{ matrix.rider }} -PverifyRiderVersions=${{ matrix.rider }} --console=plain
+
+      - name: Upload test reports and IDE logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rider-${{ matrix.rider }}-reports
+          path: |
+            src/EFCore.Visualizer.Rider/build/reports
+            src/EFCore.Visualizer.Rider/.intellijPlatform/sandbox/*/*/log-test
+          if-no-files-found: ignore
+
+      # The plugin zip, built against the oldest supported Rider (the one releases are built with).
+      - name: Build plugin
+        if: matrix.rider == '2025.1.9'
+        run: ./gradlew buildPlugin -PriderVersion=${{ matrix.rider }} --console=plain
+
+      - name: Upload plugin
+        if: matrix.rider == '2025.1.9'
+        uses: actions/upload-artifact@v7
+        with:
+          name: efcore-visualizer-rider
+          path: src/EFCore.Visualizer.Rider/build/distributions/*.zip
+          if-no-files-found: error

@@ -14,13 +14,10 @@ import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.xdebugger.impl.ui.tree.nodes.XValueContainerNode
 import com.intellij.xdebugger.impl.ui.tree.nodes.XValueNodeImpl
 import com.jetbrains.rider.debugger.settings.DotNetDebuggerSettings
-import com.jetbrains.rider.test.base.DebuggerTestBase
 import com.jetbrains.rider.test.scriptingApi.resumeSession
-import com.jetbrains.rider.test.scriptingApi.toggleBreakpoint
 import com.jetbrains.rider.test.scriptingApi.waitForPause
 import org.cef.browser.CefBrowser
 import org.cef.handler.CefDisplayHandlerAdapter
-import org.testng.annotations.AfterMethod
 import org.testng.SkipException
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.deleteIfExists
@@ -39,19 +36,12 @@ import kotlin.test.assertTrue
  * (the same browser type HTMLEditorProvider's tab uses). Screenshots are not taken: in this off-screen test mode
  * Chromium keeps a 300x200 default surface, which makes captures misleading.
  */
-abstract class PlanTabRenderTestBase : DebuggerTestBase() {
-    override val projectName = "SampleApp"
+abstract class PlanTabRenderTestBase : SampleAppDebuggerTestBase() {
 
     // Called from the version-specific @Test in PlanTabRenderTest (Rider reads test annotations from the declaring class).
     protected fun runPlanTabRendersWithStylesAndScript() {
         if (System.getenv("DISPLAY").isNullOrEmpty()) throw SkipException("JCEF needs an X display; run under xvfb-run")
-        val programCs = SampleApp.programCs
-        val line = programCs.readLines().indexOfFirst { "// BREAKPOINT" in it } + 1
-
-        testDebugProgram({
-            RiderCompat.enableMethodCalls()
-            toggleBreakpoint(project, "SampleApp/Program.cs", line)
-        }, {
+        testDebugProgram({ stopAtBreakpoint() }, {
             waitForPause()
             assertTrue(JBCefApp.isSupported(), "JCEF is not supported in this test environment")
 
@@ -128,10 +118,5 @@ abstract class PlanTabRenderTestBase : DebuggerTestBase() {
             result.file.deleteIfExists()
             resumeSession()
         }, true)
-    }
-
-    @AfterMethod(alwaysRun = true)
-    fun restoreDebuggerSettings() {
-        RiderCompat.disableMethodCalls()
     }
 }

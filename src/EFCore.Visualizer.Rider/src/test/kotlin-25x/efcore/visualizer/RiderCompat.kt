@@ -7,7 +7,7 @@ import com.jetbrains.rider.debugger.settings.DotNetDebuggerSettings
 import com.jetbrains.rider.test.framework.testData.IRiderTestDataMarker
 import java.io.File
 
-/** Test-framework differences between Rider versions (this file: 2025.1 - 2025.3). */
+/** Test-framework differences between Rider versions (this file: 2025.1 - 2025.3, with kotlin-251 or kotlin-253). */
 object RiderCompat {
     // The test framework's helper moved from ...test.base (2025.1) to ...test.debugger (2025.2+).
     private val settingsEx: Class<*> = listOf(

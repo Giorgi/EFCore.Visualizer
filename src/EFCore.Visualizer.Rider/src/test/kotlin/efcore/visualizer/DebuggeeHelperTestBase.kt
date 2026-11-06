@@ -1,12 +1,9 @@
 package efcore.visualizer
 
 import com.jetbrains.rider.debugger.settings.DotNetDebuggerSettings
-import com.jetbrains.rider.test.base.DebuggerTestBase
 import com.jetbrains.rider.test.scriptingApi.evaluateExpression
 import com.jetbrains.rider.test.scriptingApi.resumeSession
-import com.jetbrains.rider.test.scriptingApi.toggleBreakpoint
 import com.jetbrains.rider.test.scriptingApi.waitForPause
-import org.testng.annotations.AfterMethod
 import com.intellij.testFramework.PlatformTestUtil
 import java.io.File
 import kotlin.io.path.deleteIfExists
@@ -22,8 +19,7 @@ import kotlin.test.assertNotNull
  * debugger-agnostic helper through Rider's own expression evaluator (func-eval):
  *   System.Reflection.Assembly.LoadFrom(@"<helper>") then IQueryableObjectSource.QueryPlanHelper.GetPlanFile(query)
  */
-abstract class DebuggeeHelperTestBase : DebuggerTestBase() {
-    override val projectName = "SampleApp"
+abstract class DebuggeeHelperTestBase : SampleAppDebuggerTestBase() {
 
     // Resolved from the installed plugin (<plugin>/netcoreapp), i.e. the packaged layout is under test too.
     private val helperDll by lazy { QueryPlanVisualizer.helperPath().toString() }
@@ -31,16 +27,7 @@ abstract class DebuggeeHelperTestBase : DebuggerTestBase() {
 
     // Called from the version-specific @Test in DebuggeeHelperTest (Rider reads test annotations from the declaring class).
     protected fun runLoadsHelperAndGetsPlanFile() {
-        val programCs = SampleApp.programCs
-        val line = programCs.readLines().indexOfFirst { "// BREAKPOINT" in it } + 1
-        assertTrue(line > 0, "BREAKPOINT marker not found in $programCs")
-
-        testDebugProgram({
-            // Rider tests run with method calls in watches disabled ("Implicit evaluation is disabled");
-            // the visualizer needs them, exactly like Rider's default user settings allow.
-            RiderCompat.enableMethodCalls()
-            toggleBreakpoint(project, "SampleApp/Program.cs", line)
-        }, {
+        testDebugProgram({ stopAtBreakpoint() }, {
             waitForPause()
 
             val loaded = evaluateExpression("System.Reflection.Assembly.LoadFrom(@\"$helperDll\")", timeout)
@@ -169,10 +156,5 @@ abstract class DebuggeeHelperTestBase : DebuggerTestBase() {
         val match = Regex("""^\{string\} "(.*)"$""", RegexOption.DOT_MATCHES_ALL).find(presentation.trim())
         assertTrue(match != null, "Expected a string result but got: $presentation")
         return match.groupValues[1]
-    }
-
-    @AfterMethod(alwaysRun = true)
-    fun restoreDebuggerSettings() {
-        RiderCompat.disableMethodCalls()
     }
 }

@@ -27,9 +27,10 @@ kotlin {
 }
 
 // Rider's test framework API differs between versions: shared test logic lives in src/test/kotlin, the
-// version-specific bits (test annotations, a few helpers) in src/test/kotlin-<251|253|262>:
-//   251: 2025.1-2025.2 (@TestEnvironment, File test-data marker)   253: 2025.3 (@TestSettings, File marker)
-//   262: 2026.x (@TestSettings, Path marker, getSessionTabIfInitialized)
+// version-specific bits in src/test/kotlin-<251|253|261>, the test annotations (Tests.kt) and a few helpers:
+//   251: 2025.1-2025.2 (@TestEnvironment)   253: 2025.3 (@TestSettings)
+//   25x: helpers for both of those (File test-data marker, sessionTab)
+//   261: 2026.1+ (@TestSettings, helpers: Path marker, getSessionTabIfInitialized)
 // riderVersion is a release (2025.1.9), a branch EAP (263-EAP-SNAPSHOT, 2026.3-EAP2-SNAPSHOT) or LATEST-EAP-SNAPSHOT.
 val (riderMajor, riderMinor) = providers.gradleProperty("riderVersion").get().let { version ->
     val match = Regex("""^(\d+)(?:\.(\d+))?""").find(version)
@@ -40,12 +41,12 @@ val (riderMajor, riderMinor) = providers.gradleProperty("riderVersion").get().le
         else -> first to (match!!.groupValues[2].toIntOrNull() ?: 0)
     }
 }
-val testCompatDir = when {
-    riderMajor >= 2026 -> "262"
-    riderMinor >= 3 -> "253"
-    else -> "251"
+val testCompatDirs = when {
+    riderMajor >= 2026 -> listOf("261")
+    riderMinor >= 3 -> listOf("253", "25x")
+    else -> listOf("251", "25x")
 }
-sourceSets["test"].kotlin.srcDir("src/test/kotlin-$testCompatDir")
+testCompatDirs.forEach { sourceSets["test"].kotlin.srcDir("src/test/kotlin-$it") }
 
 dependencies {
     intellijPlatform {
@@ -150,7 +151,6 @@ tasks.withType<Test>().configureEach {
     systemProperty("ide.browser.jcef.testMode.enabled", "true")
     systemProperty("ide.browser.jcef.headless.enabled", "true")
     systemProperty("ide.browser.jcef.sandbox.enable", "false")
-    systemProperty("intellij.build.test.ignoreFirstAndLastTests", "true")
     testLogging {
         showStandardStreams = true
         exceptionFormat = TestExceptionFormat.FULL
