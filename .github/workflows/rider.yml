@@ -46,13 +46,36 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      # The plan tab test renders the page in Rider's embedded browser (JCEF), which needs a display: xvfb-run gives
-      # it one (without it, that test is skipped).
-      - name: Test
-        run: xvfb-run -a ./gradlew test -PriderVersion=${{ matrix.rider }} --console=plain
+      # One Gradle run for the tests and the Plugin Verifier (which builds the plugin zip); --continue runs the
+      # Verifier even when a test fails. The plan tab test renders the page in Rider's embedded browser (JCEF), which
+      # needs a display: xvfb-run gives it one.
+      - name: Test and Plugin Verifier
+        run: >-
+          xvfb-run -a ./gradlew test verifyPlugin --continue --console=plain
+          -PriderVersion=${{ matrix.rider }} -PverifyRiderVersions=${{ matrix.rider }}
 
-      - name: Plugin Verifier
-        run: ./gradlew verifyPlugin -PriderVersion=${{ matrix.rider }} -PverifyRiderVersions=${{ matrix.rider }} --console=plain
+      - name: Test summary
+        if: always()
+        shell: python
+        run: |
+          import glob, os, xml.etree.ElementTree as ET
+          rows = []
+          # Run steps start in src/EFCore.Visualizer.Rider.
+          for path in sorted(glob.glob("build/test-results/test/*.xml")):
+              for case in ET.parse(path).getroot().iter("testcase"):
+                  result = "failed" if case.find("failure") is not None or case.find("error") is not None else "skipped" if case.find("skipped") is not None else "passed"
+                  rows.append(f"| {case.get('classname', '').split('.')[-1]} | {case.get('name')} | {result} | {float(case.get('time', 0)):.0f} s |")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              print("### Rider ${{ matrix.rider }}", "", "| Class | Test | Result | Time |", "|---|---|---|---|", sep="\n", file=summary)
+              print(*(rows or ["| | no test results | | |"]), sep="\n", file=summary)
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rider-${{ matrix.rider }}-test-results
+          path: src/EFCore.Visualizer.Rider/build/test-results/test
+          if-no-files-found: ignore
 
       - name: Upload test reports and IDE logs
         if: failure()
@@ -65,10 +88,6 @@ jobs:
           if-no-files-found: ignore
 
       # The plugin zip, built against the oldest supported Rider (the one releases are built with).
-      - name: Build plugin
-        if: matrix.rider == '2025.1.9'
-        run: ./gradlew buildPlugin -PriderVersion=${{ matrix.rider }} --console=plain
-
       - name: Upload plugin
         if: matrix.rider == '2025.1.9'
         uses: actions/upload-artifact@v7
