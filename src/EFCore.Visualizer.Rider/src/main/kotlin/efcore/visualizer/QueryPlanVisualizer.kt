@@ -29,14 +29,16 @@ object QueryPlanVisualizer {
         if (!Files.isRegularFile(helper)) {
             return CompletableFuture.failedFuture(IllegalStateException("The EFCore Visualizer plugin is missing $helper. Reinstall the plugin."))
         }
-        // Nothing to fall back to when the helper doesn't load: report that on its own.
-        return DebuggeeEvaluator.loadHelper(session, helper.toString())
-            .exceptionally {
-                val cause = it.unwrap()
-                // "The debugger continued ..." isn't a load failure: report it as it is.
-                throw if (cause is NotPausedException) cause else EvaluationException("Couldn't load the visualizer into the app: ${cause.message}", "")
-            }
-            .thenCompose { getPlanOrQuery(session, queryExpression) }
+        return EvaluationTimeout.withRaisedLimit(session) {
+            // Nothing to fall back to when the helper doesn't load: report that on its own.
+            DebuggeeEvaluator.loadHelper(session, helper.toString())
+                .exceptionally {
+                    val cause = it.unwrap()
+                    // "The debugger continued ..." isn't a load failure: report it as it is.
+                    throw if (cause is NotPausedException) cause else EvaluationException("Couldn't load the visualizer into the app: ${cause.message}", "")
+                }
+                .thenCompose { getPlanOrQuery(session, queryExpression) }
+        }
     }
 
     private fun getPlanOrQuery(session: XDebugSession, queryExpression: String): CompletableFuture<VisualizeResult> =

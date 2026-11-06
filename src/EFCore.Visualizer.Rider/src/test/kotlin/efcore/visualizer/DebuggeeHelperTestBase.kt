@@ -15,6 +15,7 @@ import kotlin.test.assertEquals
 import java.time.Duration
 import kotlin.test.assertContains
 import kotlin.test.assertTrue
+import kotlin.test.assertNotNull
 
 /**
  * Debugs an EF Core + SQLite console app in a real Rider backend, stops at a breakpoint and drives the
@@ -84,14 +85,66 @@ abstract class DebuggeeHelperTestBase : DebuggerTestBase() {
             println("QueryPlanVisualizer.visualize(context) => $both")
             assertContains(both.message.orEmpty(), Regex("^Couldn't get the query plan: Expected an IQueryable.* Couldn't get the SQL either: Expected an IQueryable"))
 
+            checkEvaluationLimit()
+
             // Last, since it resumes the session: Continue during an evaluation ends it with a clear message.
-            val abandoned = DebuggeeEvaluator.evaluate(session, "System.Threading.Thread.Sleep(5000)")
+            val abandoned = EvaluationTimeout.withRaisedLimit(session) { DebuggeeEvaluator.evaluate(session, "System.Threading.Thread.Sleep(5000)") }
             PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
             session.resume()
             val continued = evaluationError(abandoned)
             println("Continue during an evaluation => $continued")
             assertTrue(continued is NotPausedException, "unexpected: $continued")
         }, true)
+    }
+
+    /** Rider's default limit is 1 s; the visualizer raises it for its own evaluations only (EvaluationTimeout). */
+    private fun com.jetbrains.rider.test.scriptingApi.DebugTestExecutionContext.checkEvaluationLimit() {
+        val testLimit = assertNotNull(EvaluationTimeout.currentLimit(session), "this Rider version doesn't expose the evaluation limit")
+        fun limitAfterwards(): Int? { PlatformTestUtil.dispatchAllEventsInIdeEventQueue(); return EvaluationTimeout.currentLimit(session) }
+        val slow = "System.Threading.Thread.Sleep(3000)"
+        try {
+            EvaluationTimeout.setLimit(session, 1000)
+
+            // The visualizer's own path restores the limit, whether it succeeds or fails.
+            PlatformTestUtil.waitForFuture(QueryPlanVisualizer.visualize(session, "query"), 60_000).file.deleteIfExists()
+            assertEquals(1000, limitAfterwards(), "not restored after a plan")
+            evaluationError(QueryPlanVisualizer.visualize(session, "context"))
+            assertEquals(1000, limitAfterwards(), "not restored after a failure")
+
+            val raised = PlatformTestUtil.waitForFuture(EvaluationTimeout.withRaisedLimit(session) { DebuggeeEvaluator.evaluate(session, slow) }, 60_000)
+            println("$slow with the raised limit => $raised")
+            assertEquals(1000, limitAfterwards(), "not restored after a slow evaluation")
+
+            val thrown = runCatching { PlatformTestUtil.waitForFuture(EvaluationTimeout.withRaisedLimit<String>(session) { error("boom") }, 60_000) }
+            assertTrue(thrown.isFailure, "a throwing evaluation succeeded")
+            assertEquals(1000, limitAfterwards(), "not restored after a synchronous throw")
+
+            // Overlapping visualizations: raised until the last one ends.
+            val first = EvaluationTimeout.withRaisedLimit(session) { DebuggeeEvaluator.evaluate(session, "System.Threading.Thread.Sleep(1500)") }
+            val second = EvaluationTimeout.withRaisedLimit(session) { DebuggeeEvaluator.evaluate(session, "System.Threading.Thread.Sleep(1500)") }
+            PlatformTestUtil.waitForFuture(first, 60_000)
+            if (!second.isDone) assertEquals(EvaluationTimeout.LIMIT_MS, limitAfterwards(), "restored while another visualization still runs")
+            PlatformTestUtil.waitForFuture(second, 60_000)
+            assertEquals(1000, limitAfterwards(), "not restored after overlapping visualizations")
+
+            // A limit already above 30 s stays as it is.
+            EvaluationTimeout.setLimit(session, 60_000)
+            var during: Int? = null
+            PlatformTestUtil.waitForFuture(EvaluationTimeout.withRaisedLimit(session) {
+                during = EvaluationTimeout.currentLimit(session)
+                DebuggeeEvaluator.evaluate(session, "1")
+            }, 60_000)
+            assertEquals(60_000, during)
+            assertEquals(60_000, limitAfterwards())
+
+            // Last: a timed-out evaluation leaves an aborted func-eval behind.
+            EvaluationTimeout.setLimit(session, 1000)
+            val timedOut = evaluationError(DebuggeeEvaluator.evaluate(session, slow))
+            println("$slow at 1000 ms => $timedOut")
+            assertContains(timedOut.message.orEmpty(), "took longer than 1 s")
+        } finally {
+            EvaluationTimeout.setLimit(session, testLimit)
+        }
     }
 
     /** The EvaluationException [future] failed with (waitForFuture wraps it: AssertionError -> ExecutionException -> cause). */

@@ -31,6 +31,7 @@ class NotPausedException(message: String, expression: String) : EvaluationExcept
  */
 object DebuggeeEvaluator {
     const val HELPER_TYPE = "IQueryableObjectSource.QueryPlanHelper"
+    private val TIMED_OUT = Regex("""^Timed out after (\d+) ms""")
 
     fun loadHelper(session: XDebugSession, helperPath: String): CompletableFuture<String> =
         evaluate(session, "System.Reflection.Assembly.LoadFrom(${csharpString(helperPath)})")
@@ -158,6 +159,14 @@ object DebuggeeEvaluator {
 
         private fun complete(type: String?, text: String, isString: Boolean, isError: Boolean) {
             if (future.isDone) return
+            // Rider's evaluation limit (see EvaluationTimeout): "Timed out after 30000 ms". English only: a localized
+            // Rider's text falls through to the plain error below.
+            TIMED_OUT.find(text)?.let {
+                val seconds = it.groupValues[1].toLong() / 1000.0
+                val limit = if (seconds % 1 == 0.0) "${seconds.toLong()} s" else "$seconds s"
+                future.completeExceptionally(EvaluationException("It took longer than $limit, the debugger's time limit for evaluations.", expression))
+                return
+            }
             // Rider reports an exception thrown by func-eval as a value: "Exception of type 'X' was thrown", with the
             // exception object's members as children.
             if (type?.endsWith("Exception") == true || text.startsWith("Exception of type '")) {
