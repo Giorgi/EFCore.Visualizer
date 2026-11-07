@@ -7,6 +7,11 @@ On first run it creates the database and fills it with 200 blogs and about 1,500
 output folder and is created again on every run. Server databases are kept: drop the database to start over, for
 example after changing the model.
 
+Use a new or empty database. The app creates its tables with EF Core's `EnsureCreated`, which does nothing in a
+database that already has tables. Then the first query fails because the sample's tables don't exist, for example
+with `42P01: relation "Blogs" does not exist` on PostgreSQL. (Oracle has no separate databases: its tables go into
+the schema of the connection string's user.)
+
 ## Choosing the database
 
 Pass `sqlite`, `sqlserver`, `postgres` or `oracle` as the first argument. Visual Studio has a launch profile for
