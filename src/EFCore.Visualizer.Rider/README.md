@@ -96,8 +96,8 @@ about 4 GB, unpacked to about 10 GB. Run the commands in this folder:
 ```
 
 The default Rider version (`riderVersion` in `gradle.properties`) is 2025.1.9, the oldest supported one. Its tests
-need the .NET 8 or 9 SDK: Rider 2025.x can't load a solution with the MSBuild of .NET 10 or newer. The plan tab test
-needs an X display, so it only runs on Linux under `xvfb-run`.
+need the .NET 8 or 9 SDK: Rider 2025.x can't load a solution with the MSBuild of .NET 10 or newer. On Linux, the plan tab
+test needs an X display: run the tests under `xvfb-run`, or it's skipped.
 
 [`.github/workflows/rider.yml`](../../.github/workflows/rider.yml) runs the tests and the Plugin Verifier for the
 oldest and the newest supported Rider. `AGENTS.md` has more on the code and the tests.

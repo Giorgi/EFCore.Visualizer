@@ -147,9 +147,11 @@ tasks.withType<Test>().configureEach {
     // class scanning does not pick up inherited TestNG methods.
     isScanForTestClasses = false
     include("**/*Test.class")
-    // The plan tab test needs an X display for the embedded browser (on CI: xvfb-run). Without one it would only
-    // skip, after Rider has opened and built the test solution for it.
-    if (System.getenv("DISPLAY").isNullOrEmpty()) exclude("**/PlanTabRenderTest.class")
+    // On Linux the plan tab test needs an X display for the embedded browser (on CI: xvfb-run). Without one it
+    // would only skip, after Rider has opened and built the test solution for it.
+    if (System.getProperty("os.name").startsWith("Linux") && System.getenv("DISPLAY").isNullOrEmpty()) {
+        exclude("**/PlanTabRenderTest.class")
+    }
     // Let JCEF (embedded browser) start inside tests, off-screen, so the plan tab can be rendered and checked.
     systemProperty("ide.browser.jcef.testMode.enabled", "true")
     systemProperty("ide.browser.jcef.headless.enabled", "true")

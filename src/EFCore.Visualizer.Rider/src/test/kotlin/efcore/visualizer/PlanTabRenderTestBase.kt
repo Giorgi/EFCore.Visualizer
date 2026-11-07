@@ -31,7 +31,7 @@ import kotlin.test.assertTrue
  * Runs the real action with the real presenter, then asks the loaded page (from inside) whether the external
  * stylesheet (reached through the template's "..\Common\treeflex.css" path) applied and whether its script runs.
  *
- * Chromium needs an X display even off-screen: run under xvfb-run (skipped otherwise). The test framework's editor
+ * On Linux, Chromium needs an X display even off-screen: run under xvfb-run (skipped otherwise). Windows works as is. The test framework's editor
  * manager cannot host HTML editor tabs, so the URL the presenter would open is loaded into a JBCefBrowser directly
  * (the same browser type HTMLEditorProvider's tab uses). Screenshots are not taken: in this off-screen test mode
  * Chromium keeps a 300x200 default surface, which makes captures misleading.
@@ -40,7 +40,9 @@ abstract class PlanTabRenderTestBase : SampleAppDebuggerTestBase() {
 
     // Called from the version-specific @Test in PlanTabRenderTest (Rider reads test annotations from the declaring class).
     protected fun runPlanTabRendersWithStylesAndScript() {
-        if (System.getenv("DISPLAY").isNullOrEmpty()) throw SkipException("JCEF needs an X display; run under xvfb-run")
+        if (System.getProperty("os.name").startsWith("Linux") && System.getenv("DISPLAY").isNullOrEmpty()) {
+            throw SkipException("JCEF needs an X display on Linux; run under xvfb-run")
+        }
         testDebugProgram({ stopAtBreakpoint() }, {
             waitForPause()
             assertTrue(JBCefApp.isSupported(), "JCEF is not supported in this test environment")
