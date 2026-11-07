@@ -129,6 +129,24 @@ Details that matter when changing this:
   rewrites each `(prefers-color-scheme: dark|light)` in `media="..."`, `@media` and `matchMedia(...)` to `all` or
   `not all` for the current theme, sets `--bg-color`/`--text-color` from the VS Code theme variables, and the tab
   re-renders when the theme changes.
+- **Links to `#…`:** VS Code's webview cancels every click on a link to `#something` (it only scrolls to that id),
+  so the URL hash never changes. pev2's tabs (Plan, Grid, Raw, ...) and node links work through the hash, so
+  `toWebviewHtml` adds `HASH_LINKS`: a `document` click listener, which runs after the page's own handlers and
+  before VS Code's on `window`, and sets the hash itself unless the page already cancelled or stopped the click.
+- **Fit after a resize:** pev2 fits the diagram to the window only when it opens, so a plan opened in a narrow tab
+  stays small when the tab is maximized. `REFIT_ON_RESIZE` mounts pev2 again after a resize of more than 15%, or on
+  coming back to the Plan tab after one, which fits the zoom to the new size. The tab and selected node survive,
+  because pev2 keeps them in the URL hash; with a node selected, pev2 centers on it. Expanded nodes (cards with the
+  `detailed` class) and their detail tabs are noted before the remount and opened again after it. A remount would
+  reset the user's own zoom, so it stops once the user zooms (wheel, double-click) or drags the diagram's
+  background with the main button; it starts again only when the plan is opened again. Hidden or zero-size tabs
+  aren't refitted.
+- Both scripts go at the end of the body (the Postgres template has no `<body>`, so at the end of the page):
+  `REFIT_ON_RESIZE` uses the template's globals (`Vue`, `pev2`, `app`, `plan`, `query`) and does nothing on pages
+  without them. Both are VS Code only: the templates, shared with Visual Studio, stay unchanged. The refit depends
+  on pev2's markup (`.plan-node`, `.detailed`, `.node-detail-toggle`, d3-zoom's `__zoom` property), so **check it
+  after upgrading pev2**; if a newer pev2 fits on resize itself, drop it. pev2 itself logs "Cannot read properties
+  of null (reading '$el')" when it leaves the Plan tab; that happens in a plain browser too and is harmless.
 
 ## Rules
 
@@ -147,7 +165,9 @@ Details that matter when changing this:
 the helper calls; the command and its webview HTML, including the CSP; the SQL fallback and plan retry; escaping
 in `Encode`; that templates put placeholders only where they are escaped; asset loading from a path with
 special characters; the theme; which variables get the menu item; and tab reuse and refresh.
-`progress.test.ts` checks the progress notification's timing and text.
+`progress.test.ts` checks the progress notification's timing and text. `webview.test.ts` checks where
+`toWebviewHtml` puts the page scripts and that they reach the page as valid JavaScript; how they behave in the page
+(tabs, refit, expanded nodes) is only checked by hand.
 
 The SQL Server, PostgreSQL and Oracle pages aren't covered by the tests (the sample app uses SQLite only).
 
