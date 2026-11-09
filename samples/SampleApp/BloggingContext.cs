@@ -74,6 +74,11 @@ public class SqlServerBloggingContext(string connectionString) : BloggingContext
 public class PostgresBloggingContext(string connectionString) : BloggingContext
 {
     protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseNpgsql(connectionString);
+
+    // The sample's dates have no time zone (Kind=Unspecified). Npgsql maps DateTime to "timestamp with time zone",
+    // which accepts only UTC dates, so store them without a time zone, as the other databases do.
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
+        configurationBuilder.Properties<DateTime>().HaveColumnType("timestamp without time zone");
 }
 
 /// <summary>Oracle has no separate databases: the tables go into the schema of the user in the connection string.</summary>
