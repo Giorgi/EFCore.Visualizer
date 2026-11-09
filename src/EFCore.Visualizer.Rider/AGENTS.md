@@ -57,6 +57,11 @@ See `README.md` for the commands. Things that aren't obvious:
   `.intellijPlatform/sandbox/*/<version>/log-test`.
 - Rider 2025.x tests fail with "Unknown tools version: 18.x" when the newest .NET SDK on the machine is 10 or newer.
   `global.json` doesn't help: the test framework picks the newest MSBuild. CI removes the other SDKs.
+- To try the plugin by hand, use `runRider` (also the shared run configuration in `.run`), not `runIde`. `runIde`
+  runs the Rider SDK build the tests use, which has no embedded browser engine (no `plugins/jcef-plugin/jcef`), so
+  the plan tab stays empty. `runRider` runs the Rider install named by the `localRider` Gradle property (set it in
+  `~/.gradle/gradle.properties`), or else downloads Rider's installer build (`runRiderVersion` in
+  `gradle.properties`). Both open `samples/SampleApp`.
 - The test framework turns method calls in watches off; `SampleAppDebuggerTestBase.stopAtBreakpoint()` turns them
   on, and `RiderCompat.disableMethodCalls()` restores the previous value (it doesn't switch them off).
 - The test framework raises the evaluation limit, so set it explicitly (`EvaluationTimeout.setLimit`) when a test

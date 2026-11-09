@@ -90,8 +90,8 @@ about 4 GB, unpacked to about 10 GB. Run the commands in this folder:
 
 ```shell
 ./gradlew buildPlugin                          # the plugin zip, in build/distributions
-./gradlew runIde                               # a Rider with the plugin installed, in a sandbox
-./gradlew test -PriderVersion=2026.2.4         # the tests: they debug samples/SampleApp in a real Rider
+./gradlew runRider                             # a Rider with the plugin and samples/SampleApp, in a sandbox
+./gradlew test '-PriderVersion=2026.2.4'       # the tests: they debug samples/SampleApp in a real Rider
 ./gradlew verifyPlugin                         # the Plugin Verifier, against the Rider versions in gradle.properties
 ```
 

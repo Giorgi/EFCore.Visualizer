@@ -116,6 +116,29 @@ tasks.withType<PrepareSandboxTask>().configureEach {
     }
 }
 
+// runRider: Rider with the plugin, to try it by hand. Unlike runIde, it uses a full Rider: the SDK build
+// (useInstaller = false, needed for the tests) has no embedded browser engine, so the plan tab stays empty there.
+// With localRider (a Rider install folder, e.g. in ~/.gradle/gradle.properties) it runs that Rider; otherwise it
+// downloads Rider's installer build (runRiderVersion). Either way in its own sandbox, apart from your settings.
+intellijPlatformTesting {
+    runIde {
+        register("runRider") {
+            val localRider = providers.gradleProperty("localRider").orNull
+            if (localRider != null) {
+                localPath = file(localRider)
+            } else {
+                type = org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.Rider
+                version = providers.gradleProperty("runRiderVersion")
+                useInstaller = true
+            }
+        }
+    }
+}
+// Both open the repository's sample app, ready to debug.
+tasks.withType<org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask>().configureEach {
+    args(rootDir.resolve("../../samples/SampleApp/SampleApp.slnx").canonicalPath)
+}
+
 // Rider 2025.x SDK declares a test-only service for the bundled JavaScript "Live Edit" plugin whose class it does not
 // ship; it fails when a debug session starts. The tests don't need Live Edit, so leave it out of the test sandbox.
 // On Windows, the bundled C++ plugin's console stack-trace filter asks for a C++ test toolchain ("Environment is not

@@ -1,0 +1,20 @@
+<component name="ProjectRunConfigurationManager">
+  <!-- Starts a second Rider with the plugin installed and samples/SampleApp open (runRider). riderVersion 2026.2.4
+       builds the plugin against the SDK the tests already downloaded. Quoted: Windows PowerShell splits an unquoted
+       -PriderVersion=2026.2.4 at the dots. -->
+  <configuration default="false" name="Run Rider with the plugin" type="ShConfigurationType">
+    <option name="SCRIPT_TEXT" value="./gradlew runRider '-PriderVersion=2026.2.4'" />
+    <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+    <option name="SCRIPT_PATH" value="" />
+    <option name="SCRIPT_OPTIONS" value="" />
+    <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+    <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
+    <option name="INTERPRETER_PATH" value="" />
+    <option name="INTERPRETER_OPTIONS" value="" />
+    <option name="EXECUTE_IN_TERMINAL" value="true" />
+    <option name="EXECUTE_SCRIPT_FILE" value="false" />
+    <envs />
+    <method v="2" />
+  </configuration>
+</component>
