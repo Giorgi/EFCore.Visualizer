@@ -5,6 +5,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.fileEditor.impl.HTMLEditorProvider
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -49,8 +50,11 @@ open class QueryPlanPresenter {
             if (expression.codePointCount(0, expression.length) > 40) expression.substring(0, expression.offsetByCodePoints(0, 39)) + "…"
             else expression
         val title = if (result.kind == VisualizeResult.Kind.PLAN) "Query Plan: $shortExpression" else "Query: $shortExpression"
-        // Without it the page is always light. If it fails, the page is still readable, just not themed.
+        // The database, for the tab's icon, and the theme: without it the page is always light. If either fails, the
+        // page is still shown, just with the globe icon or in light.
+        var database: PlanDatabase? = null
         try {
+            database = PlanDatabase.of(Files.readString(result.file))
             PageTheme.applyTo(result.file)
         } catch (e: java.io.IOException) {
             thisLogger().warn("Could not apply the theme to ${result.file}", e)
@@ -60,6 +64,11 @@ open class QueryPlanPresenter {
         if (editor == null) {
             notify(project, "Could not open an embedded browser tab. The page is at ${result.file}", NotificationType.WARNING)
             return
+        }
+        // The tab got its icon when it opened: ask for it again, now that the file says which database it's for.
+        editor.file?.let { file ->
+            file.putUserData(PlanDatabase.KEY, database)
+            FileEditorManagerEx.getInstanceEx(project).updateFilePresentation(file)
         }
         tabs[variable] = PlanTab(editor, if (result.kind == VisualizeResult.Kind.PLAN) sql else null)
         Disposer.register(editor) {

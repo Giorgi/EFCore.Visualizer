@@ -74,6 +74,8 @@ Visualizing the variable again tries the plan again.</p>
     <!-- Errors stay until closed, so they can be read. -->
     <notificationGroup id="EFCore Visualizer errors" displayType="STICKY_BALLOON"/>
     <applicationService serviceImplementation="efcore.visualizer.QueryPlanPresenter"/>
+    <!-- The database's icon on plan tabs. First, so no other provider's icon wins. -->
+    <fileIconProvider implementation="efcore.visualizer.PlanTabIconProvider" order="first"/>
   </extensions>
 
   <actions>
