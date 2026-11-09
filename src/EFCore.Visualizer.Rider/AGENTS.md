@@ -39,6 +39,9 @@ It has no Rider backend (ReSharper) part: everything goes through the IntelliJ d
     the notifications (errors in a sticky group; the text is HTML, so it's escaped). An application service, so
     tests replace it.
   - `PlanProgress.kt`: the status bar progress, same text as VS Code's.
+  - `PageTheme.kt`: Rider's embedded browser always reports a light color scheme, and the templates go dark only
+    through `prefers-color-scheme`. Before a page is shown, its `prefers-color-scheme` conditions are turned into
+    "all"/"not all" for Rider's theme and the background becomes the editor's, as VS Code's `webview.ts` does.
 - `src/test/kotlin/`: shared test logic (`*TestBase`), `SampleAppDebuggerTestBase` (breakpoint, settings).
   `src/test/kotlin-251` (2025.1-2025.2, `@TestEnvironment`), `kotlin-253` (2025.3, `@TestSettings`), `kotlin-25x`
   (helpers for both) and `kotlin-261` (2026.1+) have the version-specific parts; `build.gradle.kts` picks them from

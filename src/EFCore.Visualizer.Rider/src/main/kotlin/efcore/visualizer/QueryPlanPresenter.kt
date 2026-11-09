@@ -2,6 +2,7 @@ package efcore.visualizer
 
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.impl.HTMLEditorProvider
@@ -48,6 +49,12 @@ open class QueryPlanPresenter {
             if (expression.codePointCount(0, expression.length) > 40) expression.substring(0, expression.offsetByCodePoints(0, 39)) + "…"
             else expression
         val title = if (result.kind == VisualizeResult.Kind.PLAN) "Query Plan: $shortExpression" else "Query: $shortExpression"
+        // Without it the page is always light. If it fails, the page is still readable, just not themed.
+        try {
+            PageTheme.applyTo(result.file)
+        } catch (e: java.io.IOException) {
+            thisLogger().warn("Could not apply the theme to ${result.file}", e)
+        }
         // A file:// URL keeps the templates' relative CSS/JS references working.
         val editor = HTMLEditorProvider.openEditor(project, title, HTMLEditorProvider.Request.url(result.file.toUri().toString()))
         if (editor == null) {
