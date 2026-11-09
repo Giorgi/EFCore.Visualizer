@@ -134,17 +134,18 @@ Details that matter when changing this:
   `toWebviewHtml` adds `HASH_LINKS`: a `document` click listener, which runs after the page's own handlers and
   before VS Code's on `window`, and sets the hash itself unless the page already cancelled or stopped the click.
 - **Fit after a resize:** pev2 fits the diagram to the window only when it opens, so a plan opened in a narrow tab
-  stays small when the tab is maximized. `REFIT_ON_RESIZE` mounts pev2 again after a resize of more than 15%, or on
-  coming back to the Plan tab after one, which fits the zoom to the new size. The tab and selected node survive,
+  stays small when the tab is maximized. Not the extension's code: the Postgres template loads
+  `../EFCore.Visualizer.Core/Resources/Postgres/refit.js`, shared with Visual Studio and Rider, which have the same
+  problem. It mounts pev2 again after a resize of more than 15%, or on coming back to the Plan tab after one, which
+  fits the zoom to the new size. The tab and selected node survive,
   because pev2 keeps them in the URL hash; with a node selected, pev2 centers on it. Expanded nodes (cards with the
   `detailed` class) and their detail tabs are noted before the remount and opened again after it. A remount would
   reset the user's own zoom, so it stops once the user zooms (wheel, double-click) or drags the diagram's
   background with the main button; it starts again only when the plan is opened again. Hidden or zero-size tabs
   aren't refitted.
-- Both scripts go at the end of the body (the Postgres template has no `<body>`, so at the end of the page):
-  `REFIT_ON_RESIZE` uses the template's globals (`Vue`, `pev2`, `app`, `plan`, `query`) and does nothing on pages
-  without them. Both are VS Code only: the templates, shared with Visual Studio, stay unchanged. The refit depends
-  on pev2's markup (`.plan-node`, `.detailed`, `.node-detail-toggle`, d3-zoom's `__zoom` property), so **check it
+- `HASH_LINKS` goes at the end of the body (the Postgres template has no `<body>`, so at the end of the page).
+  `refit.js` comes after the template's own scripts: it uses their globals (`Vue`, `pev2`, `app`, `plan`, `query`)
+  and does nothing on pages without them. The refit depends on pev2's markup (`.plan-node`, `.detailed`, `.node-detail-toggle`, d3-zoom's `__zoom` property), so **check it
   after upgrading pev2**; if a newer pev2 fits on resize itself, drop it. pev2 itself logs "Cannot read properties
   of null (reading '$el')" when it leaves the Plan tab; that happens in a plain browser too and is harmless.
 
@@ -166,8 +167,9 @@ the helper calls; the command and its webview HTML, including the CSP; the SQL f
 in `Encode`; that templates put placeholders only where they are escaped; asset loading from a path with
 special characters; the theme; which variables get the menu item; and tab reuse and refresh.
 `progress.test.ts` checks the progress notification's timing and text. `webview.test.ts` checks where
-`toWebviewHtml` puts the page scripts and that they reach the page as valid JavaScript; how they behave in the page
-(tabs, refit, expanded nodes) is only checked by hand.
+`toWebviewHtml` puts `HASH_LINKS`, that it reaches the page as valid JavaScript, and that the Postgres template loads
+`refit.js` after its own scripts and that it's valid; how they behave in the page (tabs, refit, expanded nodes) is
+only checked by hand.
 
 The SQL Server, PostgreSQL and Oracle pages aren't covered by the tests (the sample app uses SQLite only).
 
