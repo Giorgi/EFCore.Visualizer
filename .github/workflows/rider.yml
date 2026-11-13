@@ -1,0 +1,97 @@
+name: Rider plugin
+
+on:
+  push:
+    paths: [ 'src/EFCore.Visualizer.Rider/**', 'src/EFCore.Visualizer.Core/**', 'samples/SampleApp/**', '.github/workflows/rider.yml' ]
+  pull_request:
+    paths: [ 'src/EFCore.Visualizer.Rider/**', 'src/EFCore.Visualizer.Core/**', 'samples/SampleApp/**', '.github/workflows/rider.yml' ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # The oldest Rider the plugin supports (sinceBuild 251) and the newest. Each job runs the integration tests
+        # (a real Rider debugging samples/SampleApp) and the Plugin Verifier against that same Rider, so each job
+        # downloads one Rider SDK (about 4 GB).
+        rider: [ 2025.1.9, 2026.2.4 ]
+    name: test (Rider ${{ matrix.rider }})
+    defaults:
+      run:
+        working-directory: src/EFCore.Visualizer.Rider
+    steps:
+      - uses: actions/checkout@v7
+
+      # The sample app targets net8.0; EFCore.Visualizer.Core (net6) builds with the same SDK.
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      # The runner also has newer SDKs, and Rider's tests pick the newest MSBuild whatever global.json says: Rider
+      # 2025.1 can't load a solution with the MSBuild of .NET 10+ ("Unknown tools version: 18.x"). Keep only 8.x.
+      - name: Remove the other .NET SDKs
+        run: |
+          dotnet --list-sdks | while read -r version path; do
+            case "$version" in 8.*) ;; *) dir="${path#[}"; sudo rm -rf "${dir%]}/$version" ;; esac
+          done
+          dotnet --list-sdks
+
+      # Gradle runs on it, and kotlin.jvmToolchain(21) finds it, so the foojay resolver doesn't download another.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # One Gradle run for the tests and the Plugin Verifier (which builds the plugin zip); --continue runs the
+      # Verifier even when a test fails. The plan tab test renders the page in Rider's embedded browser (JCEF), which
+      # needs a display: xvfb-run gives it one.
+      - name: Test and Plugin Verifier
+        run: >-
+          xvfb-run -a ./gradlew test verifyPlugin --continue --console=plain
+          -PriderVersion=${{ matrix.rider }} -PverifyRiderVersions=${{ matrix.rider }}
+
+      - name: Test summary
+        if: always()
+        shell: python
+        run: |
+          import glob, os, xml.etree.ElementTree as ET
+          rows = []
+          # Run steps start in src/EFCore.Visualizer.Rider.
+          for path in sorted(glob.glob("build/test-results/test/*.xml")):
+              for case in ET.parse(path).getroot().iter("testcase"):
+                  result = "failed" if case.find("failure") is not None or case.find("error") is not None else "skipped" if case.find("skipped") is not None else "passed"
+                  rows.append(f"| {case.get('classname', '').split('.')[-1]} | {case.get('name')} | {result} | {float(case.get('time', 0)):.0f} s |")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              print("### Rider ${{ matrix.rider }}", "", "| Class | Test | Result | Time |", "|---|---|---|---|", sep="\n", file=summary)
+              print(*(rows or ["| | no test results | | |"]), sep="\n", file=summary)
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rider-${{ matrix.rider }}-test-results
+          path: src/EFCore.Visualizer.Rider/build/test-results/test
+          if-no-files-found: ignore
+
+      - name: Upload test reports and IDE logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rider-${{ matrix.rider }}-reports
+          path: |
+            src/EFCore.Visualizer.Rider/build/reports
+            src/EFCore.Visualizer.Rider/.intellijPlatform/sandbox/*/*/log-test
+          if-no-files-found: ignore
+
+      # The plugin zip, built against the oldest supported Rider (the one releases are built with).
+      - name: Upload plugin
+        if: matrix.rider == '2025.1.9'
+        uses: actions/upload-artifact@v7
+        with:
+          name: efcore-visualizer-rider
+          path: src/EFCore.Visualizer.Rider/build/distributions/*.zip
+          if-no-files-found: error
