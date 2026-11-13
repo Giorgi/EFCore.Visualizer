@@ -115,7 +115,10 @@ class Visualizer {
     if (running) {
       return running;
     }
-    const run = this.showNow(session, frameId, expression, key, refresh).finally(() => this.running.delete(key));
+    // One notification for the whole run, the SQL check included: the first time in a debug session, loading the helper
+    // into the app and getting the SQL alone take a few seconds.
+    const run = withProgressNotification('Getting the query plan', this.showNow(session, frameId, expression, key, refresh))
+      .finally(() => this.running.delete(key));
     this.running.set(key, run);
     return run;
   }
@@ -143,7 +146,7 @@ class Visualizer {
     let planFile: string | undefined;
     let planError: unknown;
     try {
-      planFile = await withProgressNotification('Getting the query plan', getPlanFile(session, frameId, expression));
+      planFile = await getPlanFile(session, frameId, expression);
     } catch (e) {
       planError = e;
       logError(this.log, `No plan for ${expression}`, e);
