@@ -13,6 +13,7 @@ import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.impl.ui.tree.XDebuggerTree
 import com.intellij.xdebugger.impl.ui.tree.actions.XDebuggerTreeActionBase
 import java.nio.file.Files
+import java.util.concurrent.CompletableFuture
 import efcore.visualizer.QueryPlanVisualizer.unwrap
 
 /** "Visualize Query Plan" in the debugger Variables/Watches context menu. */
@@ -90,13 +91,27 @@ class VisualizeQueryPlanAction : DumbAwareAction() {
     private fun visualize(project: Project, session: XDebugSession, expression: String, presenter: QueryPlanPresenter) {
         val app = ApplicationManager.getApplication()
         val variable = session to expression
+        // One indicator for the whole run, the SQL check included: the first time, loading the helper into the app and
+        // getting the SQL alone take a few seconds.
+        val done = CompletableFuture<Unit>()
+        PlanProgress.whileRunning(project, expression, done)
         QueryPlanVisualizer.queryString(session, expression).whenComplete { sql, _ ->
             app.invokeLater {
-                if (project.isDisposed || presenter.focusIfUnchanged(project, session, expression, sql)) {
+                val unchanged = try {
+                    project.isDisposed || presenter.focusIfUnchanged(project, session, expression, sql)
+                } catch (t: Throwable) {
+                    // The indicator and the click guard mustn't stay forever.
                     running.remove(variable)
+                    done.complete(Unit)
+                    throw t
+                }
+                if (unchanged) {
+                    running.remove(variable)
+                    done.complete(Unit)
                     return@invokeLater
                 }
-                PlanProgress.whileRunning(project, expression, QueryPlanVisualizer.visualize(session, expression)).whenComplete { result, error ->
+                QueryPlanVisualizer.visualize(session, expression).whenComplete { result, error ->
+                    done.complete(Unit)
                     app.invokeLater {
                         running.remove(variable)
                         when {
