@@ -18,10 +18,18 @@ const VENDORED = `The query plan pages include these files from third-party libr
   Postgres/vue.global.prod.js  Vue 3.5.44 (MIT)
   Postgres/bootstrap.min.css   Bootstrap 5.3.8 (MIT)
   SqlServer/qp.min.js, qp.css, qp_icons.png
-                               html-query-plan (MIT), which includes svg.js 2.6.2 (MIT)
+                               html-query-plan (MIT), built from the fork https://github.com/rudi-bruchez/query-plan
+                               at commit 4dba4c76a6655021588ee3398f2ac6b7a7295298. It includes svg.js 2.6.2 (MIT).
+                               Its license text is the same as the original html-query-plan's, below.
   Common/highlight.min.js, highlight.sql.js, highlight.css, highlight.dark.min.css
                                highlight.js 11.11.1 (BSD-3-Clause)
   Common/treeflex.css          Treeflex (MIT)
+
+The operator icons in SqlServer/qp_icons.png are those of the Microsoft documentation
+(https://github.com/MicrosoftDocs/sql-docs, "Showplan logical and physical operators reference"),
+(c) Microsoft, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). The fork made their light
+background transparent. Its warning, parallel and batch overlays come from the Fat Cow "Farm Fresh" web icons pack
+(http://www.fatcow.com/free-icons), as in the original html-query-plan.
 
 The license texts below are taken from the packages npm installs for these versions. For pev2's dependencies,
 those are the newest versions its version ranges allow, which can differ slightly from the ones bundled into

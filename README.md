@@ -82,5 +82,5 @@ See the Rider plugin's [README](src/EFCore.Visualizer.Rider/README.md) for detai
 
 ## Credits
 
-This extension uses [pev2](https://github.com/dalibo/pev2/), [html-query-plan](https://github.com/JustinPealing/html-query-plan) and 
+This extension uses [pev2](https://github.com/dalibo/pev2/), [html-query-plan](https://github.com/JustinPealing/html-query-plan) (built from [Rudi Bruchez's fork](https://github.com/rudi-bruchez/query-plan)) and 
 [Treeflex](https://dumptyd.github.io/treeflex/) to display query plans, and [highlight.js](https://highlightjs.org/) to highlight SQL.

@@ -39,14 +39,22 @@
             text-transform: uppercase;
         }
 
+        /* 13px, as before the switch to the fork, whose qp.css sets 11px on the whole plan: the SQL is read, not
+           glanced at. */
         .qp-statement-header {
             color: var(--text-color);
+            font-size: 13px;
         }
 
-        /* The plan's operators and tooltips have light backgrounds in every theme (qp.css), so their text stays
-           dark. Without this they'd inherit the page's text color, which VS Code sets to the theme's foreground. */
-        div.qp-node, .qp-tt {
-            color: black;
+        /* The whole SQL, wrapped, instead of qp.css's single line cut off with an ellipsis. */
+        .qp-statement-header-row {
+            height: auto;
+        }
+
+        .qp-statement-header-row > div {
+            position: static;
+            width: auto;
+            white-space: normal;
         }
 
         /* The arrows are an SVG as wide as the window, not as the plan. In a window narrower than the plan, the
@@ -75,7 +83,10 @@
         });
 
         function drawPlan() {
-            QP.showPlan(document.getElementById("container"), '{plan}');
+            // The theme is passed rather than "auto": with "auto", qp.css picks the theme with a media query, but VS Code
+            // and Rider set the page's theme by rewriting the media queries of this page, which doesn't reach qp.css.
+            var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            QP.showPlan(document.getElementById("container"), '{plan}', { theme: dark ? "dark" : "light" });
 
             hljs.highlightElement(document.getElementsByClassName('qp-statement-header-row')[0].firstChild);
         }
