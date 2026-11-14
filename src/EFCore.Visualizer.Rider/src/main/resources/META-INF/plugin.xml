@@ -21,11 +21,12 @@ for Visual Studio. It shows the same plan pages.</p>
 <p><b>Usage</b></p>
 <ol>
   <li>Debug your app and pause it, for example at a breakpoint, where a query is in scope.</li>
-  <li>In <b>Variables</b> or <b>Watches</b>, right-click the query (an <code>IQueryable</code> from EF Core, or a
-    <code>DbSet</code>) and choose <b>Visualize Query Plan</b>.</li>
+  <li>In <b>Variables</b> or <b>Watches</b>, select the query (an <code>IQueryable</code> from EF Core, or a
+    <code>DbSet</code>) and click the <b>Visualize Query Plan</b> button on the view's toolbar, or right-click the
+    query and choose <b>Visualize Query Plan</b>.</li>
 </ol>
 <p>The plan opens in an editor tab. The menu item appears only on EF Core queries, whatever the variable's
-declared type.</p>
+declared type, and the toolbar button is enabled only when one is selected.</p>
 <ul>
   <li>Each variable gets its own tab, so you can compare plans side by side.</li>
   <li>Visualizing the same variable again brings its tab to the front. If the query changed in the meantime
@@ -58,7 +59,8 @@ Visualizing the variable again tries the plan again.</p>
   <change-notes><![CDATA[
 <p><b>1.0.0</b>: first release.</p>
 <ul>
-  <li><b>Visualize Query Plan</b> in the Variables and Watches context menu, for EF Core queries and DbSets.</li>
+  <li><b>Visualize Query Plan</b> in the Variables and Watches context menu and on the view's toolbar, for EF Core
+    queries and DbSets.</li>
   <li>Plans for SQL Server, PostgreSQL, Oracle and SQLite, the same pages as the Visual Studio extension. When
     there's no plan, the query's SQL, with the reason.</li>
   <li>One tab per variable, reused while its query is unchanged.</li>
@@ -82,8 +84,13 @@ Visualizing the variable again tries the plan again.</p>
     <action id="EFCoreVisualizer.VisualizeQueryPlan"
             class="efcore.visualizer.VisualizeQueryPlanAction"
             text="Visualize Query Plan"
-            description="Show the execution plan of the selected EF Core IQueryable">
+            description="Show the execution plan of the selected EF Core IQueryable"
+            icon="/icons/queryPlan.svg">
       <add-to-group group-id="XDebugger.ValueGroup" anchor="last"/>
+      <!-- The toolbar of the Variables view, as Rider shows it by default (with the watches in it), and of a
+           separate Variables tab. -->
+      <add-to-group group-id="XDebugger.Watches.Tree.Toolbar" anchor="last"/>
+      <add-to-group group-id="XDebugger.Variables.Tree.Toolbar" anchor="last"/>
     </action>
   </actions>
 </idea-plugin>

@@ -23,11 +23,12 @@ To install a plugin zip instead: **Settings | Plugins**, the gear icon, **Instal
 ## Usage
 
 1. Debug your app and pause it, for example at a breakpoint, where a query is in scope.
-2. In **Variables** or **Watches**, right-click the query (an `IQueryable` from EF Core, or a `DbSet`) and choose
-   **Visualize Query Plan**.
+2. In **Variables** or **Watches**, select the query (an `IQueryable` from EF Core, or a `DbSet`) and click the
+   **Visualize Query Plan** button on the view's toolbar, or right-click the query and choose **Visualize Query Plan**.
 
 The plan opens in an editor tab. The menu item appears only on EF Core queries, whatever the variable's declared
-type (`IQueryable`, `IOrderedQueryable`, `IEnumerable`, ...), and only in .NET debug sessions.
+type (`IQueryable`, `IOrderedQueryable`, `IEnumerable`, ...), and only in .NET debug sessions. The toolbar button
+stays in place in .NET debug sessions and is enabled only when an EF Core query is selected.
 
 While the plan is fetched, the status bar shows the elapsed time.
 

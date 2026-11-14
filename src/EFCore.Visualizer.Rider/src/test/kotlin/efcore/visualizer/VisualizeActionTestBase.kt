@@ -2,6 +2,9 @@ package efcore.visualizer
 
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.ActionUiKind
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.impl.Utils
 import com.intellij.openapi.application.ApplicationManager
@@ -77,6 +80,11 @@ abstract class VisualizeActionTestBase : SampleAppDebuggerTestBase() {
                 valueGroup.childActionsOrStubs.any { actionManager.getId(it) == VisualizeQueryPlanAction.ID },
                 "action is not in XDebugger.ValueGroup",
             )
+            // And on the Variables view's toolbars (with watches, Rider's default, and a separate Variables tab).
+            for (toolbar in listOf("XDebugger.Watches.Tree.Toolbar", "XDebugger.Variables.Tree.Toolbar")) {
+                val group = actionManager.getAction(toolbar) as DefaultActionGroup
+                assertTrue(group.childActionsOrStubs.any { actionManager.getId(it) == VisualizeQueryPlanAction.ID }, "action is not in $toolbar")
+            }
 
             // 2. The session's real Variables view.
             val tree = assertNotNull(RiderCompat.variablesTree(session), "the debug session has no Variables view")
@@ -170,10 +178,17 @@ abstract class VisualizeActionTestBase : SampleAppDebuggerTestBase() {
                     other?.rawValue != null
                 }, 60)
                 tree.selectionPath = other!!.path
-                val otherEvent = TestActionEvent.createTestEvent(action, Utils.createAsyncDataContext(tree))
-                action.update(otherEvent)
-                println("'$name' (${other!!.valuePresentation?.type} / ${other!!.rawValue}): enabled=${otherEvent.presentation.isEnabledAndVisible}")
-                assertEquals(offered, otherEvent.presentation.isEnabledAndVisible, "action offered for '$name'")
+                val otherContext = Utils.createAsyncDataContext(tree)
+                // The context menu shows it only on queries; the toolbar keeps it in place, greyed out on anything else.
+                val menuEvent = AnActionEvent.createEvent(action, otherContext, action.templatePresentation.clone(), ActionPlaces.getPopupPlace("XDebuggerTree"), ActionUiKind.POPUP, null)
+                action.update(menuEvent)
+                val toolbarEvent = AnActionEvent.createEvent(action, otherContext, action.templatePresentation.clone(), "DebuggerToolbar", ActionUiKind.TOOLBAR, null)
+                action.update(toolbarEvent)
+                println("'$name' (${other!!.valuePresentation?.type} / ${other!!.rawValue}): menu=${menuEvent.presentation.isEnabledAndVisible} " +
+                    "toolbar visible=${toolbarEvent.presentation.isVisible} enabled=${toolbarEvent.presentation.isEnabled}")
+                assertEquals(offered, menuEvent.presentation.isEnabledAndVisible, "action offered in the menu for '$name'")
+                assertTrue(toolbarEvent.presentation.isVisible, "toolbar button hidden for '$name'")
+                assertEquals(offered, toolbarEvent.presentation.isEnabled, "toolbar button enabled for '$name'")
             }
 
             resumeSession()

@@ -45,14 +45,23 @@ class VisualizeQueryPlanAction : DumbAwareAction() {
     /**
      * Only for EF Core queries in a paused .NET session: on anything else, the action would load the helper into the
      * app for nothing. While a value is still being computed, the action stays available.
+     *
+     * In a context menu it's hidden on anything else. On the Variables view's toolbar, it stays in place in every
+     * .NET session and is only greyed out, so the toolbar doesn't change as the selection moves.
      */
     override fun update(e: AnActionEvent) {
         val session = projectOf(e)?.let { sessionOf(e, it) }
         val node = XDebuggerTreeActionBase.getSelectedNode(e.dataContext)
         // Rider shows a DbSet as "{InternalDbSet<Blog>} ...", but an EF query only as its value: "EntityQueryable<Blog>".
         val shown = node?.valuePresentation?.type ?: node?.rawValue
-        e.presentation.isEnabledAndVisible = session != null && session.isSuspended && isDotNet(session) && node != null &&
-            (shown == null || QUERY_TYPE.containsMatchIn(shown))
+        val dotNet = session != null && isDotNet(session)
+        val enabled = dotNet && session!!.isSuspended && node != null && (shown == null || QUERY_TYPE.containsMatchIn(shown))
+        if (e.isFromContextMenu) {
+            e.presentation.isEnabledAndVisible = enabled
+        } else {
+            e.presentation.isVisible = dotNet
+            e.presentation.isEnabled = enabled
+        }
     }
 
     /** Variables whose plan is being fetched; UI thread only. A second click meanwhile is ignored: starting another run

@@ -1,0 +1,7 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- A query plan: an operator fed by two others. -->
+  <rect x="1.5" y="5.5" width="4" height="4" rx="1" stroke="#6C707E"/>
+  <rect x="10.5" y="1.5" width="4" height="4" rx="1" stroke="#6C707E"/>
+  <rect x="10.5" y="10.5" width="4" height="4" rx="1" stroke="#6C707E"/>
+  <path d="M5.5 7.5H8.5M8.5 3.5V12.5M8.5 3.5H10.5M8.5 12.5H10.5" stroke="#6C707E"/>
+</svg>
