@@ -120,7 +120,7 @@
     "pretest": "npm run compile && npm run build:helper && npm run build:fixture",
     "test": "node out/test/runTest.js",
     "vscode:prepublish": "npm run compile && npm run build:helper && node scripts/copy-license.js",
-    "package": "vsce package"
+    "package": "vsce package --baseContentUrl https://github.com/Giorgi/EFCore.Visualizer/blob/HEAD/src/EFCore.Visualizer.VSCode --baseImagesUrl https://github.com/Giorgi/EFCore.Visualizer/raw/HEAD/src/EFCore.Visualizer.VSCode"
   },
   "devDependencies": {
     "@types/mocha": "10.0.10",

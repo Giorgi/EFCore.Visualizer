@@ -61,7 +61,9 @@ the VSIX as a run artifact, for trying a build by hand.
 in Release, copy the repository's `LICENSE` here; the copy is git-ignored). It writes
 `vscode-efcore-visualizer-<version>.vsix`. `.vscodeignore` is an allowlist: it excludes everything (`**`), then
 lets through only `package.json`, `README.md`, `CHANGELOG.md`, `LICENSE`, `images/icon.png`, `out/*.js` and
-`dist/**`. A new file the extension needs at run time must be added there. The Marketplace ID is
+`dist/**`. A new file the extension needs at run time must be added there. README images (`images/*.png`, apart
+from the icon) aren't packed: vsce turns relative links into GitHub URLs. It ignores `repository.directory`, so the
+`package` script passes `--baseContentUrl`/`--baseImagesUrl` with this folder's path; the images must be on `main`. The Marketplace ID is
 `GiorgiDalakishvili.vscode-efcore-visualizer` (`publisher` + `name`), and it can't change after the first publish.
 The extension is published from this repository by `.github/workflows/vscode-publish.yml`, by hand only: set
 `version` in `package.json`, push a `vscode-v<version>` tag, run the workflow from that tag and tick "publish". It
