@@ -6,7 +6,11 @@ Supports SQL Server, PostgreSQL, Oracle and SQLite.
 This is the VS Code version of the [EFCore Visualizer](https://github.com/Giorgi/EFCore.Visualizer) for
 Visual Studio. It shows the same plan pages.
 
-<!-- TODO: screenshot of a plan tab in VS Code -->
+![A SQL Server execution plan in a VS Code tab, beside the C# code of the paused app](images/sqlserver-plan.png)
+
+![A PostgreSQL execution plan drawn as a tree of nodes, in VS Code's dark theme](images/postgresql-plan.png)
+
+![A SQL Server execution plan in VS Code's light theme, beside the C# code of the paused app](images/sqlserver-plan-light.png)
 
 ## Requirements
 
