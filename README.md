@@ -65,7 +65,11 @@ The query plan includes Actual IO stats, Outline data, Projections, and Predicat
 
 ## Visual Studio Code
 
-The visualizer is also available for VS Code. While you debug with Microsoft's C# extension, hover over a query in **Variables** or **Watch** and click the **Visualize Query Plan** button at the end of its row, or right-click the query and choose **Visualize Query Plan**. The plan opens in a tab beside the editor, with the same plan pages as in Visual Studio. The tab's title bar has a **Refresh** button and a **Copy SQL** button, which copies the query's SQL with its parameters. It requires **VS Code 1.90 or newer** and supports **EF Core 7 or newer**.
+[![VS Code Marketplace Version](https://badgen.net/vs-marketplace/v/GiorgiDalakishvili.vscode-efcore-visualizer?label=Download%20Now&color=purple)](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.vscode-efcore-visualizer)
+
+Install the [EFCore Visualizer extension](https://marketplace.visualstudio.com/items?itemName=GiorgiDalakishvili.vscode-efcore-visualizer) from the Visual Studio Marketplace, or search for "EFCore Visualizer" in VS Code's Extensions view. While you debug with Microsoft's C# extension, hover over a query in **Variables** or **Watch** and click the **Visualize Query Plan** button at the end of its row, or right-click the query and choose **Visualize Query Plan**. The plan opens in a tab beside the editor, with the same plan pages as in Visual Studio. The tab's title bar has a **Refresh** button and a **Copy SQL** button, which copies the query's SQL with its parameters. It requires **VS Code 1.90 or newer** and supports **EF Core 7 or newer**.
+
+![A SQL Server execution plan in a VS Code tab, beside the C# code of the paused app](src/EFCore.Visualizer.VSCode/images/sqlserver-plan.png)
 
 See the VS Code extension's [README](src/EFCore.Visualizer.VSCode/README.md) for details.
 
