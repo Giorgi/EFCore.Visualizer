@@ -23,13 +23,13 @@ It reuses the Visual Studio visualizer's debuggee-side code (`../EFCore.Visualiz
 - `scripts/build-helper.js`: builds `EFCore.Visualizer.Core` and lays it out in `dist/` like the VSIX:
   `dist/netcoreapp/EFCore.Visualizer.Core.dll` plus `dist/Resources/...`.
 - `src/test/`: tests that run in a real VS Code (see Testing).
-- `../../samples/SampleApp` (outside this folder): the EF Core 8 app the tests debug, with SQLite. It's shared
+- `../../samples/SampleApp` (outside this folder): the EF Core 10 app the tests debug, with SQLite. It's shared
   with Visual Studio; see its README. The tests rely on its variable names, its `// BREAKPOINT` line and its
   `IX_{query}` index, so keep those when changing it.
 
 ## Build and test
 
-Needs Node 22 and the .NET 8 SDK on `PATH`.
+Needs Node 22 and the .NET 10 SDK on `PATH`.
 
 ```sh
 npm ci

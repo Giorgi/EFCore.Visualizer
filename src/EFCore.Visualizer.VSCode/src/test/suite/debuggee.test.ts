@@ -10,7 +10,7 @@ import { COPY_SQL_COMMAND, REFRESH_COMMAND, VISUALIZE_COMMAND, VisualizeResult, 
 const extensionRoot = path.resolve(__dirname, '../../..');
 const workspace = process.env.EFCORE_VISUALIZER_TEST_WORKSPACE ?? path.join(extensionRoot, '../../samples/SampleApp');
 const programCs = path.join(workspace, 'Program.cs');
-const programDll = path.join(workspace, 'bin/Debug/net8.0/SampleApp.dll');
+const programDll = path.join(workspace, 'bin/Debug/net10.0/SampleApp.dll');
 const helperDll = path.join(extensionRoot, 'dist/netcoreapp/EFCore.Visualizer.Core.dll');
 const resourcesDir = path.join(extensionRoot, 'dist/Resources');
 

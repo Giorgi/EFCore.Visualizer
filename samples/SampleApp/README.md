@@ -1,6 +1,6 @@
 # SampleApp
 
-A console app for trying the visualizer in Visual Studio and VS Code. It uses EF Core 8 with SQLite, SQL Server,
+A console app for trying the visualizer in Visual Studio and VS Code. It uses EF Core 10 with SQLite, SQL Server,
 PostgreSQL or Oracle. The VS Code extension's integration tests debug it too, with SQLite.
 
 On first run it creates the database and fills it with 200 blogs and about 1,500 posts. The SQLite file is in the

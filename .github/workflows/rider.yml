@@ -26,10 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # The sample app targets net8.0; EFCore.Visualizer.Core (net6) builds with the same SDK.
+      # The sample app targets net10.0; EFCore.Visualizer.Core (net6) builds with the same SDK.
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       # Gradle runs on it, and kotlin.jvmToolchain(21) finds it, so the foojay resolver doesn't download another.
       - uses: actions/setup-java@v6
