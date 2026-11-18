@@ -21,6 +21,11 @@ It has no Rider backend (ReSharper) part: everything goes through the IntelliJ d
     or, when Rider shows none (it shows an EF query only as its value, `EntityQueryable<Blog>`), its raw value. It
     ignores a second click on a variable that is still running, checks the "Allow property evaluations and other
     implicit function calls" setting, and asks the presenter whether the variable's tab is up to date.
+  - `VisualizePlanRiderLinkProvider.kt`: the "Visualize Query Plan" link on query rows (`rider.debugger.link.provider`,
+    Rider's .NET value links, 2026.2+ package; the platform's `xdebugger.nodeLinkActionProvider` isn't asked for .NET
+    values). A row shows only the first link offered: `order="first"` puts it ahead of Rider's Explore. The provider
+    is told only the value, not where it's shown, so it can't keep Explore in Variables and add the link elsewhere.
+    No link on null values (Rider gives them the declared type).
   - `QueryPlanVisualizer.kt`: loads the helper, then `GetPlanFile`, falling back to `GetQueryFile` (both errors
     reported if both fail; no fallback once the debugger isn't paused). `queryString()` is the SQL tabs are compared
     with (`GetQueryString`).

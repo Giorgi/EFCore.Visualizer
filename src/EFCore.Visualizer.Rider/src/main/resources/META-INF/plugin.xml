@@ -21,12 +21,14 @@ for Visual Studio. It shows the same plan pages.</p>
 <p><b>Usage</b></p>
 <ol>
   <li>Debug your app and pause it, for example at a breakpoint, where a query is in scope.</li>
-  <li>In <b>Variables</b> or <b>Watches</b>, select the query (an <code>IQueryable</code> from EF Core, or a
-    <code>DbSet</code>) and click the <b>Visualize Query Plan</b> button on the view's toolbar, or right-click the
-    query and choose <b>Visualize Query Plan</b>.</li>
+  <li>Click <b>Visualize Query Plan</b> at the end of the query's row (an <code>IQueryable</code> from EF Core, or a
+    <code>DbSet</code>), in <b>Variables</b>, <b>Watches</b>, the editor's hover popup or <b>Evaluate Expression</b>.
+    You can also select the query and click the <b>Visualize Query Plan</b> button on the view's toolbar, or
+    right-click it and choose <b>Visualize Query Plan</b>.</li>
 </ol>
 <p>The plan opens in an editor tab. The menu item appears only on EF Core queries, whatever the variable's
-declared type, and the toolbar button is enabled only when one is selected.</p>
+declared type, and the toolbar button is enabled only when one is selected. On EF Core queries, the link takes the
+place of Rider's <b>Explore</b>: to see the rows, expand the query and then <b>Results</b>.</p>
 <ul>
   <li>Each variable gets its own tab, so you can compare plans side by side.</li>
   <li>Visualizing the same variable again brings its tab to the front. If the query changed in the meantime
@@ -59,8 +61,8 @@ Visualizing the variable again tries the plan again.</p>
   <change-notes><![CDATA[
 <p><b>1.0.0</b>: first release.</p>
 <ul>
-  <li><b>Visualize Query Plan</b> in the Variables and Watches context menu and on the view's toolbar, for EF Core
-    queries and DbSets.</li>
+  <li><b>Visualize Query Plan</b> for EF Core queries and DbSets: a link on the query's row (Variables, Watches, the
+    hover popup, Evaluate Expression), a button on the Variables toolbar and an item in the context menu.</li>
   <li>Plans for SQL Server, PostgreSQL, Oracle and SQLite, the same pages as the Visual Studio extension. When
     there's no plan, the query's SQL, with the reason.</li>
   <li>One tab per variable, reused while its query is unchanged.</li>
@@ -78,6 +80,8 @@ Visualizing the variable again tries the plan again.</p>
     <applicationService serviceImplementation="efcore.visualizer.QueryPlanPresenter"/>
     <!-- The database's icon on plan tabs. First, so no other provider's icon wins. -->
     <fileIconProvider implementation="efcore.visualizer.PlanTabIconProvider" order="first"/>
+    <!-- The "Visualize Query Plan" link on query rows. First: a row shows only the first link offered. -->
+    <rider.debugger.link.provider implementation="efcore.visualizer.VisualizePlanRiderLinkProvider" order="first"/>
   </extensions>
 
   <actions>

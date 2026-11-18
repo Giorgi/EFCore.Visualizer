@@ -13,6 +13,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.TestActionEvent
+import com.intellij.xdebugger.frame.XDebuggerTreeNodeHyperlink
 import com.intellij.xdebugger.impl.ui.tree.XDebuggerTree
 import com.intellij.xdebugger.impl.ui.tree.actions.XDebuggerTreeActionBase
 import com.intellij.xdebugger.impl.ui.tree.nodes.XValueContainerNode
@@ -57,6 +58,15 @@ abstract class VisualizeActionTestBase : SampleAppDebuggerTestBase() {
         }
     }
 
+    private companion object {
+        const val LINK_TEXT = "Visualize Query Plan"
+    }
+
+    /** The link at the end of a row (one per row; the platform keeps it in a private field). */
+    private fun rowLink(node: XValueNodeImpl) =
+        (XValueNodeImpl::class.java.getDeclaredField("myAdditionalHyperLink").apply { isAccessible = true }.get(node)
+            as java.util.concurrent.atomic.AtomicReference<*>).get() as? XDebuggerTreeNodeHyperlink
+
     /** Dispatches UI events for [seconds], so work the action may still start gets the chance to. */
     private fun settle(seconds: Long = 3) {
         val until = System.currentTimeMillis() + seconds * 1000
@@ -98,6 +108,29 @@ abstract class VisualizeActionTestBase : SampleAppDebuggerTestBase() {
             }, 60)
             val node = queryNode!!
             println("Selected node: ${node.name} (${node.valueContainer.javaClass.name}), shown as: ${node.rawValue}")
+            // 2b. The row link (VisualizePlanRiderLinkProvider): on EF Core queries, in place of Rider's Explore; not on
+            // other collections, such as a list or an in-memory IQueryable.
+            val rows = (tree.root as XValueContainerNode<*>).children.filterIsInstance<XValueNodeImpl>().associateBy { it.name }
+            PlatformTestUtil.waitWithEventsDispatching("'query' got no Visualize Query Plan link", {
+                rowLink(node)?.linkText?.contains(LINK_TEXT) == true
+            }, 30)
+            for (name in listOf("list", "numbers")) {
+                val row = assertNotNull(rows[name], "'$name' is not in the variables tree")
+                assertTrue(rowLink(row)?.linkText?.contains(LINK_TEXT) != true, "'$name' isn't an EF Core query but got the link")
+            }
+            // Clicking it shows the query's plan, as the menu item does.
+            val clicked = RecordingPresenter()
+            val linkDisposable = Disposer.newDisposable()
+            try {
+                ApplicationManager.getApplication().replaceService(QueryPlanPresenter::class.java, clicked, linkDisposable)
+                rowLink(node)!!.onClick(null)
+                val (result, expression, _) = PlatformTestUtil.waitForFuture(clicked.shown, 60_000)
+                assertEquals("query", expression)
+                assertEquals(VisualizeResult.Kind.PLAN, result.kind, "clicking the link didn't show a plan")
+                result.file.deleteIfExists()
+            } finally {
+                Disposer.dispose(linkDisposable)
+            }
             tree.selectionPath = node.path
 
             // Built from the tree component the same way the action system builds a context-menu context,

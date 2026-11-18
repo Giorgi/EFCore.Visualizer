@@ -75,7 +75,7 @@ See the VS Code extension's [README](src/EFCore.Visualizer.VSCode/README.md) for
 
 ## JetBrains Rider
 
-The visualizer is also available for Rider. While you debug, select a query in **Variables** or **Watches** and click the **Visualize Query Plan** button on the view's toolbar, or right-click the query and choose **Visualize Query Plan**. The plan opens in an editor tab, with the same plan pages as in Visual Studio. Each variable gets its own tab, and visualizing it again shows the new plan when the query changed. It requires **Rider 2026.2 or newer** and supports **EF Core 7 or newer**.
+The visualizer is also available for Rider. While you debug, click **Visualize Query Plan** at the end of a query's row in **Variables**, **Watches** or the editor's hover popup. The same command is on the Variables toolbar and in the right-click menu. The plan opens in an editor tab, with the same plan pages as in Visual Studio. Each variable gets its own tab, and visualizing it again shows the new plan when the query changed. It requires **Rider 2026.2 or newer** and supports **EF Core 7 or newer**.
 
 See the Rider plugin's [README](src/EFCore.Visualizer.Rider/README.md) for details.
 

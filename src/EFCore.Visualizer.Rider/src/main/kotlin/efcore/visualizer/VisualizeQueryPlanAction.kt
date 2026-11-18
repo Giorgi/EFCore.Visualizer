@@ -1,6 +1,7 @@
 package efcore.visualizer
 
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
@@ -8,10 +9,12 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.xdebugger.XDebugSession
+import com.intellij.xdebugger.frame.XValue
 import com.jetbrains.rider.debugger.settings.DotNetDebuggerSettings
 import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.impl.ui.tree.XDebuggerTree
 import com.intellij.xdebugger.impl.ui.tree.actions.XDebuggerTreeActionBase
+import com.intellij.xdebugger.impl.ui.tree.nodes.XValueNodeImpl
 import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
 import efcore.visualizer.QueryPlanVisualizer.unwrap
@@ -25,9 +28,24 @@ class VisualizeQueryPlanAction : DumbAwareAction() {
         private val QUERY_TYPE = Regex("EntityQueryable|IncludableQueryable|InternalDbSet")
 
         /** A .NET debug session (Rider also debugs JavaScript, C++, Python, ...). */
-        private fun isDotNet(session: XDebugSession) =
+        internal fun isDotNet(session: XDebugSession) =
             generateSequence<Class<*>>(session.debugProcess.javaClass) { it.superclass }
                 .any { it.name == "com.jetbrains.rider.debugger.DotNetDebugProcess" }
+
+        /**
+         * Whether [node] may be an EF Core query: its type is one, or isn't known yet. Rider shows a DbSet as
+         * "{InternalDbSet<Blog>} ...", but an EF query only as its value: "EntityQueryable<Blog>".
+         */
+        internal fun mayBeQuery(node: XValueNodeImpl): Boolean {
+            val shown = node.valuePresentation?.type ?: node.rawValue
+            return shown == null || isQueryType(shown)
+        }
+
+        /** Whether [type], a .NET type name as shown or in full, is one of EF Core's query types. */
+        internal fun isQueryType(type: String) = QUERY_TYPE.containsMatchIn(type)
+
+        /** The registered action, whose run state (a click while a plan is fetched) other entry points share. */
+        fun instance() = ActionManager.getInstance().getAction(ID) as VisualizeQueryPlanAction
     }
 
     override fun getActionUpdateThread() = ActionUpdateThread.EDT
@@ -52,10 +70,8 @@ class VisualizeQueryPlanAction : DumbAwareAction() {
     override fun update(e: AnActionEvent) {
         val session = projectOf(e)?.let { sessionOf(e, it) }
         val node = XDebuggerTreeActionBase.getSelectedNode(e.dataContext)
-        // Rider shows a DbSet as "{InternalDbSet<Blog>} ...", but an EF query only as its value: "EntityQueryable<Blog>".
-        val shown = node?.valuePresentation?.type ?: node?.rawValue
         val dotNet = session != null && isDotNet(session)
-        val enabled = dotNet && session!!.isSuspended && node != null && (shown == null || QUERY_TYPE.containsMatchIn(shown))
+        val enabled = dotNet && session!!.isSuspended && node != null && mayBeQuery(node)
         if (e.isFromContextMenu) {
             e.presentation.isEnabledAndVisible = enabled
         } else {
@@ -72,6 +88,11 @@ class VisualizeQueryPlanAction : DumbAwareAction() {
         val project = projectOf(e) ?: return
         val session = sessionOf(e, project) ?: return
         val node = XDebuggerTreeActionBase.getSelectedNode(e.dataContext) ?: return
+        visualize(project, session, node.valueContainer)
+    }
+
+    /** Shows the plan of the query in [value], a value of [session] (a row in its debugger views). UI thread. */
+    fun visualize(project: Project, session: XDebugSession, value: XValue) {
         val presenter = service<QueryPlanPresenter>()
         val app = ApplicationManager.getApplication()
 
@@ -83,7 +104,7 @@ class VisualizeQueryPlanAction : DumbAwareAction() {
             return
         }
 
-        node.valueContainer.calculateEvaluationExpression().onProcessed { xExpression ->
+        value.calculateEvaluationExpression().onProcessed { xExpression ->
             // No guessing from the node's name: for a member of another value, that name alone means something else.
             val expression = xExpression?.expression?.takeIf { it.isNotBlank() }
             app.invokeLater {

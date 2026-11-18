@@ -33,6 +33,8 @@ dependencies {
         // Embedded browser (JCEF) APIs, used by the plan-tab rendering test.
         bundledModule("intellij.platform.ui.jcef")
         bundledModule("intellij.libraries.jcef")
+        // Rider's debugger link providers (the link on query rows).
+        bundledModule("intellij.rider.debugger.shared")
         // Rider's test framework (solution/debugger scripting API) ships inside the SDK.
         bundledLibrary(provider { project.intellijPlatform.platformPath.resolve("lib/testFramework.jar").toString() })
     }
@@ -45,7 +47,8 @@ intellijPlatform {
     pluginConfiguration {
         name = "EFCore Visualizer"
         ideaVersion {
-            // Oldest supported Rider (2026.2). No upper bound.
+            // Oldest supported Rider (2026.2): the row link uses Rider's debugger link API as it is from 2026.2. No
+            // upper bound.
             sinceBuild = "262"
             untilBuild = provider { null }
         }
