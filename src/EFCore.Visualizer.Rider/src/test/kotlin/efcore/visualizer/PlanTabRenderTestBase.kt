@@ -18,7 +18,6 @@ import com.jetbrains.rider.test.scriptingApi.resumeSession
 import com.jetbrains.rider.test.scriptingApi.waitForPause
 import org.cef.browser.CefBrowser
 import org.cef.handler.CefDisplayHandlerAdapter
-import org.testng.SkipException
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.deleteIfExists
 import kotlin.test.assertContains
@@ -41,7 +40,7 @@ abstract class PlanTabRenderTestBase : SampleAppDebuggerTestBase() {
     // Called from the version-specific @Test in PlanTabRenderTest (Rider reads test annotations from the declaring class).
     protected fun runPlanTabRendersWithStylesAndScript() {
         if (System.getProperty("os.name").startsWith("Linux") && System.getenv("DISPLAY").isNullOrEmpty()) {
-            throw SkipException("JCEF needs an X display on Linux; run under xvfb-run")
+            skipTest("JCEF needs an X display on Linux; run under xvfb-run")
         }
         testDebugProgram({ stopAtBreakpoint() }, {
             waitForPause()

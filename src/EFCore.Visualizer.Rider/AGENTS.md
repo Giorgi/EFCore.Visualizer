@@ -51,12 +51,17 @@ It has no Rider backend (ReSharper) part: everything goes through the IntelliJ d
     (`AllIcons.Providers`; not Simple Icons, which had to remove Microsoft's logos). The database is recognised from
     the page: each template has its own scripts or title (`PlanDatabaseTest` checks the real ones). The SQL-only page
     keeps the HTML editor's globe.
-- `src/test/kotlin/`: test logic (`*TestBase`), `SampleAppDebuggerTestBase` (breakpoint, settings), `RiderCompat`
-  (test framework helpers). The concrete test classes (`Tests.kt`) only carry the annotations and call the base
-  methods: Rider reads test annotations from the declaring class.
-- Supported: Rider 2026.2 and newer (`sinceBuild` 262), one code base. Rider's internal APIs move between versions
-  (the debugger link provider changed package in 2026.2); if a new Rider breaks one, the Plugin Verifier on the newest
-  Rider shows it.
+- `src/test/kotlin/`: test logic (`*TestBase`), `RiderCompat` (test framework helpers) and the unit tests (TestNG).
+  Rider's test framework moved to JUnit 5 in 2026.3 (its TestNG `DebuggerTestBase` is gone there, and 2026.2 has no
+  JUnit 5 one), so `src/test/kotlin-262` (TestNG) and `kotlin-263` (JUnit 5) have `SampleAppDebuggerTestBase`
+  (breakpoint, settings), the concrete test classes (`Tests.kt`) and `skipTest`. `build.gradle.kts` picks the folder
+  and the runner from `riderVersion`; on JUnit 5, the TestNG engine runs the unit tests. The concrete test classes
+  only carry the annotations and call the base methods: Rider reads test annotations from the declaring class.
+- Supported: Rider 2026.2 and newer (`sinceBuild` 262), one plugin code base. Rider's internal APIs move between
+  versions (the debugger link provider changed package in 2026.2; the platform debugger left the core classpath in
+  2026.3, hence its `bundledModule`s); if a new Rider breaks one, the Plugin Verifier on the newest Rider shows it.
+- The Plugin Verifier accepts internal API use (Rider's link interface takes the internal `XDebugSessionProxy`) and
+  deprecated API use; anything else fails the build.
 - `src/test/testData/solutions/SampleApp/SampleApp.sln`: the test solution. `prepareTestData` copies
   `../../samples/SampleApp` next to it, without `launchSettings.json` (with it, Rider picks a launch profile
   itself), so the app runs with SQLite. The tests rely on the sample's variable names and its `// BREAKPOINT` line.
@@ -81,7 +86,7 @@ See `README.md` for the commands. Things that aren't obvious:
 - After renaming a test source folder, Kotlin's incremental compilation can drop classes ("did not discover any
   tests"): delete `build/kotlin` and `build/classes/kotlin`.
 - The Plugin Verifier reports a deprecated override (`XCompositeNode.tooManyChildren(int)`): it's still abstract, so
-  it can't go.
+  it can't go. On 2026.3 it also reports `FileEditorManager.openFile(VirtualFile, boolean)`.
 - Compile against a Kotlin API no newer than the runtime bundled with the oldest supported Rider (`apiVersion`; 2.4
   in 2026.2): the plugin uses Rider's Kotlin runtime.
 

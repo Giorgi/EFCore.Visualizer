@@ -1,7 +1,12 @@
 package efcore.visualizer
 
+import com.intellij.ide.DataManager
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.platform.debugger.impl.shared.proxy.XDebugSessionProxy
+import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.frame.XDebuggerTreeNodeHyperlink
 import com.intellij.xdebugger.frame.XValue
@@ -23,16 +28,30 @@ class VisualizePlanRiderLinkProvider : RiderDebuggerLinkProvider {
         // A null query has no plan. Rider still gives it a type (the declared one, e.g. IIncludableQueryable).
         if (ValueFlags.IsNull in properties.valueFlags) return null
         if (!VisualizeQueryPlanAction.isQueryType(properties.instanceType.definitionTypeFullName)) return null
-        val project = session.project
         return object : XDebuggerTreeNodeHyperlink(" Visualize Query Plan") {
             override fun getLinkTooltip() = "Show the execution plan of this EF Core query"
 
             override fun onClick(event: MouseEvent?) {
+                // The project of the clicked view (the session proxy's getProject() is internal API).
+                val clicked = event?.component?.let { DataManager.getInstance().getDataContext(it).getData(CommonDataKeys.PROJECT) }
                 ApplicationManager.getApplication().invokeLater {
-                    val debugSession = XDebuggerManager.getInstance(project).currentSession
-                    if (!project.isDisposed && debugSession != null) VisualizeQueryPlanAction.instance().visualize(project, debugSession, value)
+                    val (project, debugSession) = sessionFor(clicked) ?: return@invokeLater
+                    VisualizeQueryPlanAction.instance().visualize(project, debugSession, value)
                 }
             }
+        }
+    }
+
+    /**
+     * The .NET debug session the link belongs to: the current one of [project], or, when the click didn't say which
+     * project it was in, of the open project that has one.
+     */
+    private fun sessionFor(project: Project?): Pair<Project, XDebugSession>? {
+        val projects = project?.let { listOf(it) } ?: ProjectManager.getInstance().openProjects.toList()
+        return projects.filterNot { it.isDisposed }.firstNotNullOfOrNull { candidate ->
+            XDebuggerManager.getInstance(candidate).currentSession
+                ?.takeIf { VisualizeQueryPlanAction.isDotNet(it) }
+                ?.let { candidate to it }
         }
     }
 }

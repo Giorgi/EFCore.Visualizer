@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
@@ -26,10 +27,26 @@ kotlin {
     compilerOptions { apiVersion.set(KotlinVersion.KOTLIN_2_3) }
 }
 
+// Rider's test framework moved to JUnit 5 in 2026.3: its TestNG DebuggerTestBase is gone there, and 2026.2 has no JUnit 5
+// one. The test logic is shared (src/test/kotlin); src/test/kotlin-262 and kotlin-263 have the debugger base class, the
+// test annotations and the skip, on TestNG and JUnit 5. riderVersion is a release (2026.2.4), a branch EAP
+// (263-EAP-SNAPSHOT, 2026.3-EAP2-SNAPSHOT) or LATEST-EAP-SNAPSHOT.
+val junit5Tests = providers.gradleProperty("riderVersion").get().let { version ->
+    val match = Regex("""^(\d+)(?:\.(\d+))?""").find(version) ?: return@let true    // LATEST-EAP-SNAPSHOT: the newest
+    val first = match.groupValues[1].toInt()
+    if (first < 1000) first >= 263 else first * 10 + (match.groupValues[2].toIntOrNull() ?: 0) >= 20263
+}
+sourceSets["test"].kotlin.srcDir(if (junit5Tests) "src/test/kotlin-263" else "src/test/kotlin-262")
+
 dependencies {
     intellijPlatform {
         rider(providers.gradleProperty("riderVersion")) { useInstaller = false }
         jetbrainsRuntime()
+        // The platform debugger API: on the core classpath up to 2026.2, separate modules from 2026.3.
+        bundledModule("intellij.platform.debugger")
+        bundledModule("intellij.platform.debugger.impl")
+        bundledModule("intellij.platform.debugger.impl.shared")
+        bundledModule("intellij.platform.debugger.impl.ui")
         // Embedded browser (JCEF) APIs, used by the plan-tab rendering test.
         bundledModule("intellij.platform.ui.jcef")
         bundledModule("intellij.libraries.jcef")
@@ -41,6 +58,13 @@ dependencies {
     testImplementation("org.testng:testng:7.10.2")
     testImplementation("junit:junit:4.13.2")
     testImplementation(kotlin("test"))
+    if (junit5Tests) {
+        testImplementation(platform("org.junit:junit-bom:5.13.4"))
+        testImplementation("org.junit.jupiter:junit-jupiter")
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+        // Runs the shared TestNG unit tests (PageThemeTest, ...) on the JUnit Platform too.
+        testRuntimeOnly("org.junit.support:testng-engine:1.0.5")
+    }
 }
 
 intellijPlatform {
@@ -54,6 +78,12 @@ intellijPlatform {
         }
     }
     pluginVerification {
+        // Everything fails the build except two kinds of API use, reported but accepted:
+        // - internal: Rider's debugger link interface (the link on query rows) takes an XDebugSessionProxy, which is
+        //   marked internal, so implementing it references one;
+        // - deprecated: XCompositeNode.tooManyChildren(int) is deprecated but still abstract, so it must be overridden.
+        failureLevel = VerifyPluginTask.FailureLevel.ALL - VerifyPluginTask.FailureLevel.INTERNAL_API_USAGES -
+            VerifyPluginTask.FailureLevel.DEPRECATED_API_USAGES
         ides {
             // Comma-separated Rider versions (gradle.properties: verifyRiderVersions); falls back to the build target.
             providers.gradleProperty("verifyRiderVersions").orElse(providers.gradleProperty("riderVersion")).get()
@@ -140,7 +170,7 @@ val prepareTestData by tasks.registering(Sync::class) {
 
 tasks.withType<Test>().configureEach {
     dependsOn(prepareTestData)
-    useTestNG()
+    if (junit5Tests) useJUnitPlatform() else useTestNG()
     // Test methods live in abstract *TestBase classes; select the concrete per-version classes by name, since
     // class scanning does not pick up inherited TestNG methods.
     isScanForTestClasses = false
