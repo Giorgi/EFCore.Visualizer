@@ -46,11 +46,12 @@ It has no Rider backend (ReSharper) part: everything goes through the IntelliJ d
     (`AllIcons.Providers`; not Simple Icons, which had to remove Microsoft's logos). The database is recognised from
     the page: each template has its own scripts or title (`PlanDatabaseTest` checks the real ones). The SQL-only page
     keeps the HTML editor's globe.
-- `src/test/kotlin/`: shared test logic (`*TestBase`), `SampleAppDebuggerTestBase` (breakpoint, settings).
-  `src/test/kotlin-251` (2025.1-2025.2, `@TestEnvironment`), `kotlin-253` (2025.3, `@TestSettings`), `kotlin-25x`
-  (helpers for both) and `kotlin-261` (2026.1+) have the version-specific parts; `build.gradle.kts` picks them from
-  `riderVersion`. The concrete test classes (`Tests.kt`) only carry the annotations and call the base methods: Rider
-  reads test annotations from the declaring class.
+- `src/test/kotlin/`: test logic (`*TestBase`), `SampleAppDebuggerTestBase` (breakpoint, settings), `RiderCompat`
+  (test framework helpers). The concrete test classes (`Tests.kt`) only carry the annotations and call the base
+  methods: Rider reads test annotations from the declaring class.
+- Supported: Rider 2026.2 and newer (`sinceBuild` 262), one code base. Rider's internal APIs move between versions
+  (the debugger link provider changed package in 2026.2); if a new Rider breaks one, the Plugin Verifier on the newest
+  Rider shows it.
 - `src/test/testData/solutions/SampleApp/SampleApp.sln`: the test solution. `prepareTestData` copies
   `../../samples/SampleApp` next to it, without `launchSettings.json` (with it, Rider picks a launch profile
   itself), so the app runs with SQLite. The tests rely on the sample's variable names and its `// BREAKPOINT` line.
@@ -62,8 +63,6 @@ See `README.md` for the commands. Things that aren't obvious:
 - Each test class starts Rider, opens and builds the solution, and debugs it: about 1 minute each.
   `--tests efcore.visualizer.VisualizeActionTest` runs one class. Rider's logs are in
   `.intellijPlatform/sandbox/*/<version>/log-test`.
-- Rider 2025.x tests fail with "Unknown tools version: 18.x" when the newest .NET SDK on the machine is 10 or newer.
-  `global.json` doesn't help: the test framework picks the newest MSBuild. CI removes the other SDKs.
 - To try the plugin by hand, use `runRider` (also the shared run configuration in `.run`), not `runIde`. `runIde`
   runs the Rider SDK build the tests use, which has no embedded browser engine (no `plugins/jcef-plugin/jcef`), so
   the plan tab stays empty. `runRider` runs the Rider install named by the `localRider` Gradle property (set it in
@@ -73,19 +72,18 @@ See `README.md` for the commands. Things that aren't obvious:
   on, and `RiderCompat.disableMethodCalls()` restores the previous value (it doesn't switch them off).
 - The test framework raises the evaluation limit, so set it explicitly (`EvaluationTimeout.setLimit`) when a test
   depends on it.
-- On Windows the test sandbox disables the C++ plugin (its console filter logs an error that fails the tests); on
-  2025.x it disables Live Edit (a test-only service without its class).
+- On Windows the test sandbox disables the C++ plugin (its console filter logs an error that fails the tests).
 - After renaming a test source folder, Kotlin's incremental compilation can drop classes ("did not discover any
   tests"): delete `build/kotlin` and `build/classes/kotlin`.
-- The Plugin Verifier reports two deprecated overrides (`XCompositeNode.tooManyChildren(int)`,
-  `XFullValueEvaluationCallback.evaluated(String, Font)`): Rider 2025.1 still requires them.
-- Compile against the Kotlin 2.1 API (`apiVersion`): the plugin uses the Kotlin runtime bundled with Rider, 2.1 in
-  2025.1.
+- The Plugin Verifier reports a deprecated override (`XCompositeNode.tooManyChildren(int)`): it's still abstract, so
+  it can't go.
+- Compile against a Kotlin API no newer than the runtime bundled with the oldest supported Rider (`apiVersion`; 2.4
+  in 2026.2): the plugin uses Rider's Kotlin runtime.
 
 ## Releasing
 
 1. Set `version` in `build.gradle.kts`, and add its notes to `<change-notes>` in `plugin.xml`.
-2. Take the plugin zip from that commit's CI run: the 2025.1.9 job's `efcore-visualizer-rider` artifact (built
+2. Take the plugin zip from that commit's CI run: the 2026.2.4 job's `efcore-visualizer-rider` artifact (built
    against the oldest supported Rider).
 3. Upload it on the JetBrains Marketplace. The first upload is done on the website, and the plugin ID
    (`dev.giorgi.efcore.visualizer`) can't change after it. JetBrains reviews uploads before they appear.

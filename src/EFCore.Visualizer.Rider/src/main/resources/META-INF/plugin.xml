@@ -12,7 +12,7 @@ for Visual Studio. It shows the same plan pages.</p>
 
 <p><b>Requirements</b></p>
 <ul>
-  <li>Rider 2025.1 or newer.</li>
+  <li>Rider 2026.2 or newer.</li>
   <li>An app that uses EF Core 7 or newer, on .NET 6 or newer.</li>
   <li><b>Allow property evaluations and other implicit function calls</b> turned on, in Settings |
     Build, Execution, Deployment | Debugger. It's on by default.</li>
@@ -66,7 +66,7 @@ Visualizing the variable again tries the plan again.</p>
   <li>One tab per variable, reused while its query is unchanged.</li>
   <li>Progress with the elapsed time while a plan is fetched. The debugger's evaluation limit is raised to 30
     seconds meanwhile.</li>
-  <li>Rider 2025.1 and newer.</li>
+  <li>Rider 2026.2 and newer.</li>
 </ul>
 ]]></change-notes>
   <depends>com.intellij.modules.rider</depends>

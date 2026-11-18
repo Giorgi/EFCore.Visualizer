@@ -151,9 +151,6 @@ object DebuggeeEvaluator {
             fullValueRequested = true
             fullValueEvaluator.startEvaluation(object : XFullValueEvaluator.XFullValueEvaluationCallback {
                 override fun evaluated(fullValue: String) = complete(type, fullValue, isString = true, isError = false)
-                // Abstract up to 2025.x (deprecated with a default since), so it must stay for older Rider versions.
-                @Suppress("OVERRIDE_DEPRECATION", "OverridingDeprecatedMember")
-                override fun evaluated(fullValue: String, font: java.awt.Font?) = evaluated(fullValue)
                 override fun errorOccurred(errorMessage: String) {
                     future.completeExceptionally(EvaluationException(errorMessage, expression))
                 }
@@ -212,8 +209,9 @@ object DebuggeeEvaluator {
                     last -> result.complete(null)
                 }
             }
-            // More members than one batch shows: ask for the rest (the timer in exceptionMessage covers the old API).
-            @Suppress("OVERRIDE_DEPRECATION") // abstract in older Rider versions
+            // More members than one batch shows: ask for the rest. The one-argument version is deprecated but still
+            // abstract.
+            @Suppress("OVERRIDE_DEPRECATION")
             override fun tooManyChildren(remaining: Int) {}
             override fun tooManyChildren(remaining: Int, addNextChildren: Runnable) { if (!found) addNextChildren.run() }
             override fun setAlreadySorted(alreadySorted: Boolean) {}

@@ -32,7 +32,7 @@ class VisualizeQueryPlanAction : DumbAwareAction() {
 
     override fun getActionUpdateThread() = ActionUpdateThread.EDT
 
-    /** The event's project, or the debugger tree's own (some contexts, e.g. Rider 2025.1 without a frame, lack it). */
+    /** The event's project, or the debugger tree's own (some contexts lack it). */
     private fun projectOf(e: AnActionEvent) = e.project ?: XDebuggerTree.getTree(e.dataContext)?.project
 
     /**

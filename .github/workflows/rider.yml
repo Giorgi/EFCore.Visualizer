@@ -15,10 +15,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The oldest Rider the plugin supports (sinceBuild 251) and the newest. Each job runs the integration tests
+        # The oldest Rider the plugin supports (sinceBuild 262) and the newest. Each job runs the integration tests
         # (a real Rider debugging samples/SampleApp) and the Plugin Verifier against that same Rider, so each job
         # downloads one Rider SDK (about 4 GB).
-        rider: [ 2025.1.9, 2026.2.4 ]
+        rider: [ 2026.2.4, 2026.3.0.1 ]
     name: test (Rider ${{ matrix.rider }})
     defaults:
       run:
@@ -30,15 +30,6 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
-
-      # The runner also has newer SDKs, and Rider's tests pick the newest MSBuild whatever global.json says: Rider
-      # 2025.1 can't load a solution with the MSBuild of .NET 10+ ("Unknown tools version: 18.x"). Keep only 8.x.
-      - name: Remove the other .NET SDKs
-        run: |
-          dotnet --list-sdks | while read -r version path; do
-            case "$version" in 8.*) ;; *) dir="${path#[}"; sudo rm -rf "${dir%]}/$version" ;; esac
-          done
-          dotnet --list-sdks
 
       # Gradle runs on it, and kotlin.jvmToolchain(21) finds it, so the foojay resolver doesn't download another.
       - uses: actions/setup-java@v6
@@ -89,7 +80,7 @@ jobs:
 
       # The plugin zip, built against the oldest supported Rider (the one releases are built with).
       - name: Upload plugin
-        if: matrix.rider == '2025.1.9'
+        if: matrix.rider == '2026.2.4'
         uses: actions/upload-artifact@v7
         with:
           name: efcore-visualizer-rider

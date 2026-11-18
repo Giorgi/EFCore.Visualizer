@@ -8,7 +8,7 @@ Studio. It shows the same plan pages.
 
 ## Requirements
 
-* Rider 2025.1 or newer.
+* Rider 2026.2 or newer.
 * An app that uses EF Core 7 or newer, on .NET 6 or newer.
 * **Allow property evaluations and other implicit function calls** turned on, in **Settings | Build, Execution,
   Deployment | Debugger**. It's on by default. The plugin calls methods in your app to get the plan; with the
@@ -92,13 +92,13 @@ about 4 GB, unpacked to about 10 GB. Run the commands in this folder:
 ```shell
 ./gradlew buildPlugin                          # the plugin zip, in build/distributions
 ./gradlew runRider                             # a Rider with the plugin and samples/SampleApp, in a sandbox
-./gradlew test '-PriderVersion=2026.2.4'       # the tests: they debug samples/SampleApp in a real Rider
+./gradlew test                                # the tests: they debug samples/SampleApp in a real Rider
 ./gradlew verifyPlugin                         # the Plugin Verifier, against the Rider versions in gradle.properties
 ```
 
-The default Rider version (`riderVersion` in `gradle.properties`) is 2025.1.9, the oldest supported one. Its tests
-need the .NET 8 or 9 SDK: Rider 2025.x can't load a solution with the MSBuild of .NET 10 or newer. On Linux, the plan tab
-test needs an X display: run the tests under `xvfb-run`, or it's skipped.
+The default Rider version (`riderVersion` in `gradle.properties`) is 2026.2.4, the oldest supported one;
+`'-PriderVersion=2026.3.0.1'` runs the tests on the newest. On Linux, the plan tab test needs an X display: run the
+tests under `xvfb-run`, or it's skipped.
 
 [`.github/workflows/rider.yml`](../../.github/workflows/rider.yml) runs the tests and the Plugin Verifier for the
 oldest and the newest supported Rider. `AGENTS.md` has more on the code and the tests.

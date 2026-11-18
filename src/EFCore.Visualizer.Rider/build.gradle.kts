@@ -21,43 +21,18 @@ repositories {
 
 kotlin {
     jvmToolchain(21)
-    // The plugin uses the Kotlin runtime bundled with Rider (kotlin.stdlib.default.dependency=false): 2.1 in 2025.1,
-    // the oldest supported. Compiling against that API keeps newer stdlib calls, which would fail there, out.
-    compilerOptions { apiVersion.set(KotlinVersion.KOTLIN_2_1) }
+    // The plugin uses the Kotlin runtime bundled with Rider (kotlin.stdlib.default.dependency=false): 2.4 in 2026.2,
+    // the oldest supported. Compiling against an API no newer than that keeps stdlib calls that would fail there out.
+    compilerOptions { apiVersion.set(KotlinVersion.KOTLIN_2_3) }
 }
-
-// Rider's test framework API differs between versions: shared test logic lives in src/test/kotlin, the
-// version-specific bits in src/test/kotlin-<251|253|261>, the test annotations (Tests.kt) and a few helpers:
-//   251: 2025.1-2025.2 (@TestEnvironment)   253: 2025.3 (@TestSettings)
-//   25x: helpers for both of those (File test-data marker, sessionTab)
-//   261: 2026.1+ (@TestSettings, helpers: Path marker, getSessionTabIfInitialized)
-// riderVersion is a release (2025.1.9), a branch EAP (263-EAP-SNAPSHOT, 2026.3-EAP2-SNAPSHOT) or LATEST-EAP-SNAPSHOT.
-val (riderMajor, riderMinor) = providers.gradleProperty("riderVersion").get().let { version ->
-    val match = Regex("""^(\d+)(?:\.(\d+))?""").find(version)
-    val first = match?.groupValues?.get(1)?.toInt()
-    when {
-        first == null -> 9999 to 9                                 // LATEST-EAP-SNAPSHOT: the newest
-        first < 1000 -> (2000 + first / 10) to (first % 10)         // branch number: 263 = 2026.3
-        else -> first to (match!!.groupValues[2].toIntOrNull() ?: 0)
-    }
-}
-val testCompatDirs = when {
-    riderMajor >= 2026 -> listOf("261")
-    riderMinor >= 3 -> listOf("253", "25x")
-    else -> listOf("251", "25x")
-}
-testCompatDirs.forEach { sourceSets["test"].kotlin.srcDir("src/test/kotlin-$it") }
 
 dependencies {
     intellijPlatform {
         rider(providers.gradleProperty("riderVersion")) { useInstaller = false }
         jetbrainsRuntime()
-        // Embedded browser (JCEF) APIs, used by the plan-tab rendering test: separate modules from 2026.2; part of the
-        // core platform jars up to 2026.1.
-        if (riderMajor > 2026 || (riderMajor == 2026 && riderMinor >= 2)) {
-            bundledModule("intellij.platform.ui.jcef")
-            bundledModule("intellij.libraries.jcef")
-        }
+        // Embedded browser (JCEF) APIs, used by the plan-tab rendering test.
+        bundledModule("intellij.platform.ui.jcef")
+        bundledModule("intellij.libraries.jcef")
         // Rider's test framework (solution/debugger scripting API) ships inside the SDK.
         bundledLibrary(provider { project.intellijPlatform.platformPath.resolve("lib/testFramework.jar").toString() })
     }
@@ -70,8 +45,8 @@ intellijPlatform {
     pluginConfiguration {
         name = "EFCore Visualizer"
         ideaVersion {
-            // Oldest Rider the tests and the Plugin Verifier pass on (2025.1). No upper bound.
-            sinceBuild = "251"
+            // Oldest supported Rider (2026.2). No upper bound.
+            sinceBuild = "262"
             untilBuild = provider { null }
         }
     }
@@ -139,13 +114,10 @@ tasks.withType<org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask>().config
     args(rootDir.resolve("../../samples/SampleApp/SampleApp.slnx").canonicalPath)
 }
 
-// Rider 2025.x SDK declares a test-only service for the bundled JavaScript "Live Edit" plugin whose class it does not
-// ship; it fails when a debug session starts. The tests don't need Live Edit, so leave it out of the test sandbox.
 // On Windows, the bundled C++ plugin's console stack-trace filter asks for a C++ test toolchain ("Environment is not
 // specified ... -Dcpp.test.msvc.home"), on the debugged app's console output. The error it logs fails the test. The
 // tests don't need C++ support.
 tasks.named<PrepareSandboxTask>("prepareTestSandbox") {
-    if (riderMajor < 2026) disabledPlugins.add("com.intellij.plugins.html.instantEditing")
     if (org.gradle.internal.os.OperatingSystem.current().isWindows) disabledPlugins.add("com.jetbrains.rider-cpp")
 }
 
