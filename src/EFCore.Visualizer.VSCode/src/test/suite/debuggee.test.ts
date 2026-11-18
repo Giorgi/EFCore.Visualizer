@@ -496,7 +496,7 @@ describe('EFCore Visualizer against a real coreclr (vsdbg) debug session', () =>
       const sql = await copy(plan.panel);
       console.log('Copy SQL =>', JSON.stringify(sql));
       // SQLite's ToQueryString declares parameters as ".param set": the copied text runs as it is.
-      assert.match(sql, /^\.param set @__minRating_0 \d+/);
+      assert.match(sql, /^\.param set @minRating \d+/);
       assert.match(sql, /FROM "Blogs"/);
 
       // The text comes back through the debugger as a string value: nothing may be cut off.
