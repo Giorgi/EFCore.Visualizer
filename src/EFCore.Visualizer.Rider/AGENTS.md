@@ -55,7 +55,8 @@ It has no Rider backend (ReSharper) part: everything goes through the IntelliJ d
   Rider's test framework moved to JUnit 5 in 2026.3 (its TestNG `DebuggerTestBase` is gone there, and 2026.2 has no
   JUnit 5 one), so `src/test/kotlin-262` (TestNG) and `kotlin-263` (JUnit 5) have `SampleAppDebuggerTestBase`
   (breakpoint, settings), the concrete test classes (`Tests.kt`) and `skipTest`. `build.gradle.kts` picks the folder
-  and the runner from `riderVersion`; on JUnit 5, the TestNG engine runs the unit tests. The concrete test classes
+  and the runner from `riderVersion`; on JUnit 5 (JUnit 6 APIs, which 2026.3's framework calls), the TestNG engine runs
+  the unit tests, and the debugger tests carry the `episode/LocalOnly` tag the framework requires. The concrete test classes
   only carry the annotations and call the base methods: Rider reads test annotations from the declaring class.
 - Supported: Rider 2026.2 and newer (`sinceBuild` 262), one plugin code base. Rider's internal APIs move between
   versions (the debugger link provider changed package in 2026.2; the platform debugger left the core classpath in

@@ -2,10 +2,18 @@ package efcore.visualizer
 
 import com.jetbrains.rider.test.junit5.base.debugger.DebuggerTestBase
 import com.jetbrains.rider.test.scriptingApi.toggleBreakpoint
+import com.jetbrains.rider.test.shared.constants.TeamCityTags
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Tag
 import kotlin.test.assertTrue
 
-/** A test that debugs the sample app (the SampleApp test solution) and stops at its `// BREAKPOINT` line. */
+/**
+ * A test that debugs the sample app (the SampleApp test solution) and stops at its `// BREAKPOINT` line.
+ *
+ * Rider's JUnit 5 tests must carry a "season" or "episode" tag (JetBrains' own CI uses them to pick tests);
+ * LocalOnly is the one it always accepts. Inherited by the test classes.
+ */
+@Tag(TeamCityTags.LocalOnly)
 abstract class SampleAppDebuggerTestBase : DebuggerTestBase() {
     override val projectName = "SampleApp"
 

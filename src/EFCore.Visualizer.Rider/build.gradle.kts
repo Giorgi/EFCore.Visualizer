@@ -59,11 +59,11 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation(kotlin("test"))
     if (junit5Tests) {
-        testImplementation(platform("org.junit:junit-bom:5.13.4"))
+        testImplementation(platform("org.junit:junit-bom:6.1.3"))   // 2026.3 needs JUnit 6 APIs
         testImplementation("org.junit.jupiter:junit-jupiter")
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
         // Runs the shared TestNG unit tests (PageThemeTest, ...) on the JUnit Platform too.
-        testRuntimeOnly("org.junit.support:testng-engine:1.0.5")
+        testRuntimeOnly("org.junit.support:testng-engine:1.1.0")
     }
 }
 
