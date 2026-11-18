@@ -1,10 +1,17 @@
 name: VS Code extension
 
 on:
+  # main only gets commits already tested on develop (or in a pull request), so pushes to it don't run this again.
   push:
+    branches-ignore: [ main ]
     paths: [ 'src/EFCore.Visualizer.VSCode/**', 'src/EFCore.Visualizer.Core/**', 'samples/SampleApp/**', '.github/workflows/vscode.yml' ]
   pull_request:
     paths: [ 'src/EFCore.Visualizer.VSCode/**', 'src/EFCore.Visualizer.Core/**', 'samples/SampleApp/**', '.github/workflows/vscode.yml' ]
+
+# A newer push to the same branch or pull request cancels the run it replaces.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   integration-test:

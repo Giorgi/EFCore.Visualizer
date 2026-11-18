@@ -1,11 +1,18 @@
 name: Rider plugin
 
 on:
+  # main only gets commits already tested on develop (or in a pull request), so pushes to it don't run this again.
   push:
+    branches-ignore: [ main ]
     paths: [ 'src/EFCore.Visualizer.Rider/**', 'src/EFCore.Visualizer.Core/**', 'samples/SampleApp/**', '.github/workflows/rider.yml' ]
   pull_request:
     paths: [ 'src/EFCore.Visualizer.Rider/**', 'src/EFCore.Visualizer.Core/**', 'samples/SampleApp/**', '.github/workflows/rider.yml' ]
   workflow_dispatch:
+
+# A newer push to the same branch or pull request cancels the run it replaces.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:

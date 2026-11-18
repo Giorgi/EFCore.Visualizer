@@ -106,7 +106,8 @@ The default Rider version (`riderVersion` in `gradle.properties`) is 2026.2.4, t
 tests under `xvfb-run`, or it's skipped.
 
 [`.github/workflows/rider.yml`](../../.github/workflows/rider.yml) runs the tests and the Plugin Verifier for the
-oldest and the newest supported Rider. `AGENTS.md` has more on the code and the tests.
+oldest and the newest supported Rider, on pushes to any branch but `main` (its commits were tested on `develop`) and
+on pull requests. `AGENTS.md` has more on the code and the tests.
 
 ## License
 
