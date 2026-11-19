@@ -94,7 +94,7 @@ See `README.md` for the commands. Things that aren't obvious:
 ## Releasing
 
 1. Set `version` in `build.gradle.kts`, and add its notes to `<change-notes>` in `plugin.xml`.
-2. Take the plugin zip from that commit's CI run: the 2026.2.4 job's `efcore-visualizer-rider` artifact (built
-   against the oldest supported Rider).
+2. Take the plugin zip from that commit's CI run: the 2026.2.4 job's `efcore-visualizer-rider-<version>.zip`
+   artifact (built against the oldest supported Rider). It downloads as the zip itself, ready to upload.
 3. Upload it on the JetBrains Marketplace. The first upload is done on the website, and the plugin ID
    (`dev.giorgi.efcore.visualizer`) can't change after it. JetBrains reviews uploads before they appear.

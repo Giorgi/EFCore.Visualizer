@@ -90,6 +90,8 @@ jobs:
         if: matrix.rider == '2026.2.4'
         uses: actions/upload-artifact@v7
         with:
-          name: efcore-visualizer-rider
+          # Upload the zip as-is instead of zipped again. The artifact is named after the file
+          # (efcore-visualizer-rider-<version>.zip).
+          archive: false
           path: src/EFCore.Visualizer.Rider/build/distributions/*.zip
           if-no-files-found: error
