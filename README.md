@@ -77,6 +77,12 @@ See the VS Code extension's [README](src/EFCore.Visualizer.VSCode/README.md) for
 
 The visualizer is also available for Rider. While you debug, click **Visualize Query Plan** at the end of a query's row in **Variables**, **Watches** or the editor's hover popup. The same command is on the Variables toolbar and in the right-click menu. The plan opens in an editor tab, with the same plan pages as in Visual Studio. Each variable gets its own tab, and visualizing it again shows the new plan when the query changed. It requires **Rider 2026.2 or newer** and supports **EF Core 7 or newer**.
 
+![The Visualize Query Plan link on an EF Core query, in the editor's hover popup and on its row in Variables](src/EFCore.Visualizer.Rider/images/link-hover-and-variables.png)
+
+![A PostgreSQL execution plan in a Rider editor tab, in the dark theme](src/EFCore.Visualizer.Rider/images/postgresql-plan.png)
+
+![A SQL Server execution plan in a Rider editor tab, in the light theme](src/EFCore.Visualizer.Rider/images/sqlserver-plan-light.png)
+
 See the Rider plugin's [README](src/EFCore.Visualizer.Rider/README.md) for details.
 
 ## Known Issues (Visual Studio):

@@ -65,6 +65,7 @@ Visualizing the variable again tries the plan again.</p>
     hover popup, Evaluate Expression), a button on the Variables toolbar and an item in the context menu.</li>
   <li>Plans for SQL Server, PostgreSQL, Oracle and SQLite, the same pages as the Visual Studio extension. When
     there's no plan, the query's SQL, with the reason.</li>
+  <li>Plan pages in Rider's light or dark theme, with the editor's background.</li>
   <li>One tab per variable, reused while its query is unchanged.</li>
   <li>Progress with the elapsed time while a plan is fetched. The debugger's evaluation limit is raised to 30
     seconds meanwhile.</li>

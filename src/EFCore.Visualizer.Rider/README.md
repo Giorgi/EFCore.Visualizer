@@ -6,6 +6,12 @@ Supports SQL Server, PostgreSQL, Oracle and SQLite.
 This is the Rider version of the [EFCore Visualizer](https://github.com/Giorgi/EFCore.Visualizer) for Visual
 Studio. It shows the same plan pages.
 
+![The Visualize Query Plan link on an EF Core query, in the editor's hover popup and on its row in Variables](images/link-hover-and-variables.png)
+
+![A PostgreSQL execution plan in a Rider editor tab, in the dark theme](images/postgresql-plan.png)
+
+![A SQL Server execution plan in a Rider editor tab, in the light theme](images/sqlserver-plan-light.png)
+
 ## Requirements
 
 * Rider 2026.2 or newer.
@@ -34,6 +40,8 @@ stays in place in .NET debug sessions and is enabled only when an EF Core query 
 
 A row has room for one link, so on EF Core queries **Visualize Query Plan** takes the place of Rider's **Explore**. To
 see the query's rows, expand it and then **Results** (this runs the query).
+
+![Variables with the Visualize Query Plan link on each EF Core query, and Rider's Explore on an in-memory IQueryable](images/link-and-explore.png)
 
 While the plan is fetched, the status bar shows the elapsed time.
 
