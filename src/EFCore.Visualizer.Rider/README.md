@@ -79,9 +79,6 @@ the variable again tries the plan again. Errors stay on screen until you close t
   and your app writes the plan page to its temp folder, where Rider opens it. Debugging an app in Docker, WSL or on
   another machine isn't supported yet: the plugin says so when it can't load the helper or find the page.
 * .NET Framework apps aren't supported: the helper targets .NET 6.
-* If your app uses Application Insights, getting the plan can fail with "Cannot evaluate expression since the
-  function evaluation requires all threads to run". The same happens in Visual Studio
-  ([#28](https://github.com/Giorgi/EFCore.Visualizer/issues/28)). Disable Application Insights while debugging.
 
 ## How it works
 

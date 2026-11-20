@@ -51,10 +51,6 @@ Visualizing the variable again tries the plan again.</p>
 <ul>
   <li>Your app must run on the same machine as Rider: debugging an app in Docker, WSL or on another machine isn't
     supported yet. .NET Framework apps aren't supported.</li>
-  <li>If your app uses Application Insights, getting the plan can fail with "Cannot evaluate expression since the
-    function evaluation requires all threads to run". The same happens in Visual Studio
-    (<a href="https://github.com/Giorgi/EFCore.Visualizer/issues/28">#28</a>). Disable Application Insights while
-    debugging.</li>
 </ul>
 ]]></description>
 
