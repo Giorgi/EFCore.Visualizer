@@ -47,5 +47,7 @@ var parameterized = context.Blogs.Where(b => b.Rating > minRating);
 var broken = context.Database.SqlQueryRaw<int>("SELECT Value FROM MissingTable");
 // Its plan names the index "IX_{query}": the placeholder text in the plan must stay as it is.
 var postsByTitle = context.Set<Post>().Where(p => p.Title == "x");
+// Raw SQL, composed with LINQ: EF wraps the SQL in a subquery. The quoted names work on all four databases.
+var fromSql = context.Blogs.FromSql($"""SELECT * FROM "Blogs" WHERE "Rating" > {minRating}""").OrderBy(b => b.Url);
 
 Console.WriteLine($"{database}: {query.Count()} blogs rated above 3"); // BREAKPOINT: integration test stops here and inspects `query`

@@ -63,6 +63,13 @@ abstract class DebuggeeHelperTestBase : SampleAppDebuggerTestBase() {
             assertContains(result.file.readText(), Regex("SEARCH \\w+ USING INDEX IX_Blogs_Rating"))
             result.file.deleteIfExists()
 
+            // A FromSql query composed with LINQ: the plan of EF's SQL, with the raw SQL as a subquery.
+            val fromSql = PlatformTestUtil.waitForFuture(QueryPlanVisualizer.visualize(session, "fromSql"), 60_000)
+            println("QueryPlanVisualizer.visualize(fromSql) => $fromSql")
+            assertEquals(VisualizeResult.Kind.PLAN, fromSql.kind, "no plan for a FromSql query: ${fromSql.warning}")
+            assertContains(fromSql.file.readText(), Regex("SEARCH \\w+ USING INDEX IX_Blogs_Rating"))
+            fromSql.file.deleteIfExists()
+
             // The user sees the exception's own message, not just its type.
             val error = evaluationError(DebuggeeEvaluator.getPlanFile(session, "context"))
             println("DebuggeeEvaluator.getPlanFile(context) => $error")

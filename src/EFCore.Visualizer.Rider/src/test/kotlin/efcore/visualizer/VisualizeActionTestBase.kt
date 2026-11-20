@@ -114,6 +114,10 @@ abstract class VisualizeActionTestBase : SampleAppDebuggerTestBase() {
             PlatformTestUtil.waitWithEventsDispatching("'query' got no Visualize Query Plan link", {
                 rowLink(node)?.linkText?.contains(LINK_TEXT) == true
             }, 30)
+            val fromSqlRow = assertNotNull(rows["fromSql"], "'fromSql' is not in the variables tree")
+            PlatformTestUtil.waitWithEventsDispatching("'fromSql' got no Visualize Query Plan link", {
+                rowLink(fromSqlRow)?.linkText?.contains(LINK_TEXT) == true
+            }, 30)
             for (name in listOf("list", "numbers")) {
                 val row = assertNotNull(rows[name], "'$name' is not in the variables tree")
                 assertTrue(rowLink(row)?.linkText?.contains(LINK_TEXT) != true, "'$name' isn't an EF Core query but got the link")
@@ -204,7 +208,7 @@ abstract class VisualizeActionTestBase : SampleAppDebuggerTestBase() {
             }
 
             // 5. Offered for a DbSet and an Include; hidden for values that aren't EF Core queries.
-            for ((name, offered) in listOf("blogs" to true, "included" to true, "numbers" to false, "list" to false, "args" to false)) {
+            for ((name, offered) in listOf("blogs" to true, "included" to true, "fromSql" to true, "numbers" to false, "list" to false, "args" to false)) {
                 var other: XValueNodeImpl? = null
                 PlatformTestUtil.waitWithEventsDispatching("'$name' did not appear in the variables tree", {
                     other = (tree.root as? XValueContainerNode<*>)?.children?.filterIsInstance<XValueNodeImpl>()?.firstOrNull { it.name == name }
